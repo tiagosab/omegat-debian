@@ -1,0 +1,17 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 01-extra-jars-in-new-location.dpatch by Tiago Saboga <tiagosaboga@gmail.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Adapt classpath to debian filesystem hierarchy..
+
+@DPATCH@
+diff -urNad omegat-1.7.2.dfsg0~/manifest-template.mf omegat-1.7.2.dfsg0/manifest-template.mf
+--- omegat-1.7.2.dfsg0~/manifest-template.mf	2007-11-10 12:27:46.000000000 -0200
++++ omegat-1.7.2.dfsg0/manifest-template.mf	2007-11-10 12:34:03.000000000 -0200
+@@ -3,5 +3,5 @@
+ License: GNU Public License version 2
+ Specification-Version: 1
+ Implementation-Version: @version@
+-Class-Path: lib/lib-mnemonics.jar lib/htmlparser.jar lib/MRJAdapter.jar lib/vldocking_2.0.6d.jar
++Class-Path: omegat-lib-mnemonics.jar libhtmlparser.jar vldocking.jar
+ 

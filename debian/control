@@ -1,0 +1,29 @@
+Source: omegat
+Section: contrib/editors
+Priority: optional
+Maintainer: Tiago Saboga <tiagosaboga@gmail.com>
+Build-Depends: debhelper (>= 5), sun-java5-jdk, dpatch, ant
+Build-Depends-Indep: docbook-to-man, imagemagick, libvldocking-java, libhtmlparser-java, tofrodos
+Homepage: http://www.omegat.org/omegat/omegat.html
+Standards-Version: 3.7.3
+
+Package: omegat
+Architecture: all
+Depends: sun-java6-jre | sun-java5-jre | sun-j2sdk1.5 | sun-j2re1.5, libvldocking-java, libhtmlparser-java
+Description: Computer Assisted Translation (CAT) tool
+ OmegaT's main features are
+  - ability to run on any operating system supporting Java
+  - use of any valid TMX file as translation reference
+  - flexible sentence segmenting (using an SRX-like method)
+  - searches in the project and the reference translation memories
+  - searches in any directory including OmegaT-readable files
+  - fuzzy matching
+  - smart handling of projects including complex directory hierarchies
+  - support for glossaries (terminology checks)
+  - easy to understand documentation and tutorial
+  - localization in a number of languages.
+ .
+ OmegaT supports OpenDocument files, Microsoft Office files (using
+ OpenOffice.org as a conversion filter, or by conversion to HTML),
+ OpenOffice.org or StarOffice files, as well as (X)HTML, Java localization
+ files or plain text files.

@@ -1,0 +1,70 @@
+#!/usr/bin/make -f
+include /usr/share/dpatch/dpatch.make
+
+JAVA_HOME=/usr/lib/jvm/java-1.5.0-sun
+ANT_OPTIONS=-propertyfile debian/ant.properties
+
+configure: configure-stamp
+configure-stamp: patch
+	dh_testdir
+	touch configure-stamp
+
+build: build-stamp
+build-stamp: configure-stamp
+	dh_testdir
+	JAVA_HOME=$(JAVA_HOME) ant $(ANT_OPTIONS) jar
+	docbook-to-man debian/omegat.sgml > omegat.1
+	convert images/OmegaT.ico[0] images/OmegaT.xpm
+	touch $@
+
+clean: unpatch clean-patched
+clean-patched:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp configure-stamp omegat.1 images/OmegaT.xpm
+	-JAVA_HOME=$(JAVA_HOME) ant $(ANT_OPTIONS) clean
+	dh_clean 
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k 
+	dh_installdirs
+	find $(CURDIR)/docs -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 cp -r --target-directory=$(CURDIR)/debian/omegat/usr/share/doc/omegat/html
+	find $(CURDIR)/debian/omegat/usr/share/doc/omegat -name '*license.txt' -delete
+	find $(CURDIR)/debian/omegat/usr/share -regex '.*(html|txt)' -print0 | xargs -0 fromdos
+	install -m 755 $(CURDIR)/release/OmegaT $(CURDIR)/debian/omegat/usr/bin/omegat
+	fromdos $(CURDIR)/debian/omegat/usr/bin/omegat
+	install -m 644 $(CURDIR)/lib-mnemonics/dist/lib-mnemonics.jar $(CURDIR)/debian/omegat/usr/share/java/omegat-lib-mnemonics.jar
+
+binary-arch: build install
+
+binary-indep: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs 
+	dh_installdocs
+	dh_installexamples
+	dh_install
+	dh_installmenu
+	dh_installman
+	dh_link
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install configure get-orig-source
+
+version:=$(shell dpkg-parsechangelog | sed -n -e 's/^Version: \(.*\)-[^-]*/\1/p')
+up_version:=$(shell echo $(version) | sed -e 's/\([[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\)\.\([[:digit:]]*\)/\1_0\2/')
+up_filename:=OmegaT_$(up_version)_Source.zip
+
+get-orig-source:
+	set -ex ; \
+        wget http://heanet.dl.sourceforge.net/sourceforge/omegat/$(up_filename); \
+	$(CURDIR)debian/repack-source.sh --repack-only $(version) $(up_filename); \
+	rm $(up_filename)

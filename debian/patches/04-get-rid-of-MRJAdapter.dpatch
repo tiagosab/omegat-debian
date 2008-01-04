@@ -1,0 +1,65 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 04-get-rid-of-MRJAdapter.dpatch by Tiago Saboga <tiagosaboga@gmail.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Remove unneeded library (only useful to Mac OS).
+
+@DPATCH@
+diff -urNad omegat-1.7.2.dfsg0~/src/org/omegat/gui/main/MainWindow.java omegat-1.7.2.dfsg0/src/org/omegat/gui/main/MainWindow.java
+--- omegat-1.7.2.dfsg0~/src/org/omegat/gui/main/MainWindow.java	2007-11-10 12:49:10.000000000 -0200
++++ omegat-1.7.2.dfsg0/src/org/omegat/gui/main/MainWindow.java	2007-11-10 12:50:14.000000000 -0200
+@@ -66,7 +66,6 @@
+ import javax.swing.text.BadLocationException;
+ import javax.swing.undo.CannotRedoException;
+ import javax.swing.undo.CannotUndoException;
+-import net.roydesign.mac.MRJAdapter;
+ 
+ import org.omegat.core.ProjectProperties;
+ import org.omegat.core.StringEntry;
+@@ -104,8 +103,6 @@
+ import com.vlsolutions.swing.docking.event.DockableStateWillChangeListener;
+ import com.vlsolutions.swing.docking.ui.DockingUISettings;
+ 
+-import net.roydesign.mac.MRJAdapter;
+-
+ /**
+  * The main window of OmegaT application.
+  *
+@@ -258,35 +255,8 @@
+         uiUpdateOnProjectClose();
+         initUIShortcuts();
+         
+-        try
+-        {
+-            // MacOSX-specific
+-            MRJAdapter.addQuitApplicationListener(new ActionListener()
+-            {
+-                public void actionPerformed(ActionEvent e)
+-                {
+-                    doQuit();
+-                }
+-            });
+-            MRJAdapter.addAboutListener(new ActionListener()
+-            {
+-                public void actionPerformed(ActionEvent e)
+-                {
+-                    doAbout();
+-                }
+-            });
+-        }
+-        catch(NoClassDefFoundError e)
+-        {
+-            Log.log(e);
+-        }
+-
+-        // all except MacOSX
+-        if(!StaticUtils.onMacOSX())   // NOI18N
+-        {
+-            projectMenu.add(separator2inProjectMenu);
+-            projectMenu.add(projectExitMenuItem);
+-        }
++	projectMenu.add(separator2inProjectMenu);
++	projectMenu.add(projectExitMenuItem);
+ 
+         // Add Language submenu to Options menu
+ 
