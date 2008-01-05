@@ -4,14 +4,15 @@ omegat (1.7.3.dfsg0-2) unstable; urgency=low
   * Bump Standards-Version to 3.7.3 (no changes required).
   * Change Priority to optional.
   * Update copyright file: new copyright holders (Tiago Saboga, Zoltan
-    Bartko).
+    Bartko), add copyright for docs (from docs/en/legalNotices.html),
+  	remove reference to non-installed file.
   * Remove extra spaces from omegat.doc-base.
   * Add descriptions to patches.
   * Updated README.Debian.
   * Remove executable for other platform without source (see
     README.Debian).
 
- -- Tiago Saboga <tiagosaboga@gmail.com>  Fri, 04 Jan 2008 00:15:14 -0200
+ -- Tiago Saboga <tiagosaboga@gmail.com>  Sat, 05 Jan 2008 16:10:57 -0200
 
 omegat (1.7.3.dfsg0-1) unstable; urgency=low
 

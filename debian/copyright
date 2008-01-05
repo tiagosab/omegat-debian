@@ -46,6 +46,10 @@ Copyright:
    Copyright 2007 Zoltan Bartko
    Copyright 2007 Tiago Saboga
 
+   The documentation, except for the Instant Start Guide chapter, is
+   Copyright 2007 Vito Smolej.
+   The Instant Start Guide is Copyright 2005-2007 Samuel Murray.
+
 License: 
 
    OmegaT is free software; you can redistribute it and/or
@@ -68,5 +72,3 @@ License:
 On Debian GNU/Linux systems, the complete text of the latest version
 of the GNU General Public License can be found in
 /usr/share/common-licenses/GPL.
-
-For more details, see /usr/share/doc/html/legalNotices.html.
