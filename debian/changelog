@@ -1,3 +1,15 @@
+omegat (1.7.3.update1+dfsg0-1) unstable; urgency=low
+
+  * Add Vcs-Svn and Vcs-Browser fields.
+  * New upstream release.
+  * Change numbering scheme to accommodate update releases and
+    rewrite watch file accordingly.
+  * Set Debian Java Team as maintainer and myself as uploader.
+  * Remove get-orig-source from debian/rules; use uscan instead.
+  * repack-source.sh deletes temporary files and dirs.
+
+ -- Tiago Saboga <tiagosaboga@gmail.com>  Sat, 23 Feb 2008 15:41:00 -0300
+
 omegat (1.7.3.dfsg0-2) unstable; urgency=low
 
   * Initial release (Closes: #448867).

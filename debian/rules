@@ -58,13 +58,3 @@ binary-indep: build install
 
 binary: binary-indep binary-arch
 .PHONY: build clean binary-indep binary-arch binary install configure get-orig-source
-
-version:=$(shell dpkg-parsechangelog | sed -n -e 's/^Version: \(.*\)-[^-]*/\1/p')
-up_version:=$(shell echo $(version) | sed -e 's/\([[:digit:]]*\.[[:digit:]]*\.[[:digit:]]*\)\.\([[:digit:]]*\)/\1_0\2/')
-up_filename:=OmegaT_$(up_version)_Source.zip
-
-get-orig-source:
-	set -ex ; \
-        wget http://heanet.dl.sourceforge.net/sourceforge/omegat/$(up_filename); \
-	$(CURDIR)debian/repack-source.sh --repack-only $(version) $(up_filename); \
-	rm $(up_filename)
