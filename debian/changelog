@@ -1,4 +1,4 @@
-omegat (1.7.3.update1+dfsg0-1) unstable; urgency=low
+omegat (1.7.3.up1+dfsg0-1) unstable; urgency=low
 
   * Add Vcs-Svn and Vcs-Browser fields.
   * New upstream release.

@@ -1,7 +1,7 @@
 Source: omegat
 Section: contrib/editors
 Priority: optional
-Maintainer: Debian Java maintainers <pkg-java-maintainers@lists.alioth.debian.org>
+Maintainer: Debian Java Maintainers <pkg-java-maintainers@lists.alioth.debian.org>
 Uploaders: Tiago Saboga <tiagosaboga@gmail.com>
 Build-Depends: debhelper (>= 5), sun-java5-jdk, dpatch, ant
 Build-Depends-Indep: docbook-to-man, imagemagick, libvldocking-java, libhtmlparser-java, tofrodos
