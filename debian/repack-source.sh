@@ -11,7 +11,7 @@ VERSION=$2
 FILENAME=$3
 
 TMPDIR=`mktemp -d omegat-tmp`
-BASEDIR=$TMPDIR/omegat-${VERSION}.dfsg0
+BASEDIR=$TMPDIR/omegat-${VERSION}+dfsg
 mkdir "$BASEDIR"
 unzip -d "$BASEDIR" "$FILENAME"
 
@@ -22,7 +22,7 @@ rm -r "$BASEDIR"/lib
 rm "$BASEDIR"/release/win32-specific/*exe
 
 # Repack
-GZIP=-9 tar -C "$TMPDIR" -czf ../omegat_${VERSION}.dfsg0.orig.tar.gz "omegat-${VERSION}.dfsg0"
+GZIP=-9 tar -C "$TMPDIR" -czf ../omegat_${VERSION}+dfsg.orig.tar.gz "omegat-${VERSION}+dfsg"
 
 # Clean temporary files
 rm -rf "$TMPDIR"
