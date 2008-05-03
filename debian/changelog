@@ -1,8 +1,9 @@
 omegat (1.7.3.u2+dfsg-1) unstable; urgency=low
 
   * New upstream release.
+  * Fix doc-base section.
 
- -- Tiago Saboga <tiagosaboga@gmail.com>  Sat, 03 May 2008 09:57:51 -0300
+ -- Tiago Saboga <tiagosaboga@gmail.com>  Sat, 03 May 2008 16:16:49 -0300
 
 omegat (1.7.3.u1+dfsg-1) unstable; urgency=low
 
