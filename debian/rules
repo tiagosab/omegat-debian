@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 include /usr/share/dpatch/dpatch.make
 
-JAVA_HOME=/usr/lib/jvm/java-1.5.0-sun
+JAVA_HOME=/usr/lib/jvm/java-6-openjdk
 ANT_OPTIONS=-propertyfile debian/ant.properties
 
 configure: configure-stamp
