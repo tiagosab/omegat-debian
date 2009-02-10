@@ -1,0 +1,22 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 07-set-default-dictionary-location.dpatch by Tiago Saboga <tiagosaboga@gmail.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Set sensible default location for hunspell dictionaries.
+
+@DPATCH@
+diff -urNad omegat~/src/org/omegat/core/spellchecker/SpellChecker.java omegat/src/org/omegat/core/spellchecker/SpellChecker.java
+--- omegat~/src/org/omegat/core/spellchecker/SpellChecker.java	2009-02-01 18:44:52.000000000 -0200
++++ omegat/src/org/omegat/core/spellchecker/SpellChecker.java	2009-02-10 13:52:15.000000000 -0200
+@@ -140,8 +140,9 @@
+                 CommandThread.core.getProjectProperties().getTargetLanguage()
+                 .getLocaleCode();
+         
+-        String dictionaryDir = Preferences.getPreference(
+-                Preferences.SPELLCHECKER_DICTIONARY_DIRECTORY);
++        String dictionaryDir = Preferences.getPreferenceDefault(
++                Preferences.SPELLCHECKER_DICTIONARY_DIRECTORY,
++                "/usr/share/myspell/dicts");
+         
+         if (dictionaryDir != null) {
+             String affixName = dictionaryDir + File.separator + language +

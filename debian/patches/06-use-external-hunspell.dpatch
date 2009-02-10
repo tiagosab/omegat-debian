@@ -1,0 +1,37 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 06-use-external-hunspell.dpatch by Tiago Saboga <tiagosaboga@gmail.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Use debian's libhunspell.
+
+@DPATCH@
+diff -urNad omegat~/build.xml omegat/build.xml
+--- omegat~/build.xml	2008-05-06 14:25:22.000000000 -0300
++++ omegat/build.xml	2009-02-09 23:20:34.000000000 -0200
+@@ -63,10 +63,6 @@
+     
+     <target name="-post-jar">
+         <delete file="${dist.dir}/README.TXT"/>
+-        <!-- copy the native libraries to the distribution directory -->
+-        <copy todir="dist/native">
+-            <fileset dir="native"/>
+-        </copy>
+     </target>
+     
+     <!-- Creates a zip with two localization packs -->
+diff -urNad omegat~/src/org/omegat/core/spellchecker/SpellChecker.java omegat/src/org/omegat/core/spellchecker/SpellChecker.java
+--- omegat~/src/org/omegat/core/spellchecker/SpellChecker.java	2009-02-09 23:19:32.000000000 -0200
++++ omegat/src/org/omegat/core/spellchecker/SpellChecker.java	2009-02-09 23:19:32.000000000 -0200
+@@ -109,11 +109,7 @@
+     
+     /** Creates a new instance of SpellChecker */
+     protected  SpellChecker() {
+-        String libraryPath = StaticUtils.installDir()
+-            + File.separator
+-            + OConsts.NATIVE_LIBRARY_DIR
+-            + File.separator
+-            + mapLibraryName(OConsts.SPELLCHECKER_LIBRARY_NAME);
++        String libraryPath = "hunspell-1.2";
+         
+         try {
+             hunspell = (Hunspell) Native.loadLibrary(libraryPath, Hunspell.class);

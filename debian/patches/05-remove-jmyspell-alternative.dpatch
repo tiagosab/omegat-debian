@@ -1,0 +1,77 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 05-remove-jmyspell-alternative.dpatch by Tiago Saboga <tiagosaboga@gmail.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Do not use jmyspell, as it is not in debian.
+
+@DPATCH@
+diff -urNad omegat-1.8.0.1_beta+dfsg~/src/org/omegat/core/spellchecker/SpellChecker.java omegat-1.8.0.1_beta+dfsg/src/org/omegat/core/spellchecker/SpellChecker.java
+--- omegat-1.8.0.1_beta+dfsg~/src/org/omegat/core/spellchecker/SpellChecker.java	2008-02-11 11:15:56.000000000 -0200
++++ omegat-1.8.0.1_beta+dfsg/src/org/omegat/core/spellchecker/SpellChecker.java	2008-05-08 23:47:57.000000000 -0300
+@@ -42,8 +42,6 @@
+ import java.nio.charset.Charset;
+ import java.nio.charset.CharsetDecoder;
+ import java.util.ArrayList;
+-import org.dts.spell.dictionary.OpenOfficeSpellDictionary;
+-import org.dts.spell.dictionary.SpellDictionary;
+ 
+ import org.omegat.core.threads.CommandThread;
+ import org.omegat.util.Log;
+@@ -69,8 +67,6 @@
+      */
+     private Hunspell hunspell;
+     
+-    private org.dts.spell.SpellChecker jmyspell;
+-    
+     /** the list of ignored words */
+     private ArrayList ignoreList = new ArrayList();
+     
+@@ -147,16 +143,8 @@
+             if (hunspell != null) {
+                 pHunspell = hunspell.Hunspell_create(affixName, dictionaryName);
+                 encoding = hunspell.Hunspell_get_dic_encoding(pHunspell);
+-            } else {
+-                try {
+-                    SpellDictionary dict = new OpenOfficeSpellDictionary(new File(dictionaryName), new File(affixName), false);
+-                    jmyspell = new org.dts.spell.SpellChecker(dict);
+-                    jmyspell.setCaseSensitive(false);
+-                } catch (Exception ex) {
+-                    Log.log("Error loading jmyspell: " + ex.getMessage());
+-                    return;
+-                }
+-            }            
++            } 
++
+             // find out the internal project directory
+             String projectDir = 
+                     CommandThread.core.getProjectProperties().getProjectInternal();
+@@ -198,9 +186,6 @@
+             
+             pHunspell = null;
+         }
+-        if (jmyspell != null) {
+-            jmyspell = null;
+-        }
+ 
+     }
+     
+@@ -273,8 +258,6 @@
+                 Log.log("Unsupported encoding " + encoding);
+             }
+             return false;
+-        } else if (jmyspell != null) {
+-            return jmyspell.isCorrect(word);
+         } else {
+             return false;
+         }
+@@ -330,9 +313,7 @@
+                     Log.log("Unsupported encoding "+encoding);
+                 }
+             }
+-        } else if (jmyspell != null) {
+-            aList.addAll(jmyspell.getDictionary().getSuggestions(word, 20));
+-        }
++        } 
+         
+         return aList;
+     }

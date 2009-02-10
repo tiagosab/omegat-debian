@@ -22,6 +22,9 @@ Upstream Authors:
     Tiago Saboga
     Benjamin Siband
     Martin Wunderlich
+    Alex Buloichik
+    Fabian Mandelbaum
+    Martin Fleurke
 
   Other contributions by
     Sabine Cretella
@@ -32,20 +35,24 @@ Upstream Authors:
     Marc Prior (localization manager)
     and many, many more very helpful people
 
-  OmegaT uses the following libraries:
-    HTMLParser by Somik Raha, Derrick Oswald and others (LGPL License).
-    http://sourceforge.net/projects/htmlparser
-  
-    VLDocking Framework by VLSolutions (CeCILL License).
-    http://www.vlsolutions.com/en/products/docking/
-
 Copyright: 
    Copyright(C) 2000-2007 Keith Godfrey, Maxym Mykhalchuk, Henry
    Pijffers, Benjamin Siband, Sandra Jean Chua, Kim Bruning, Martin
    Wunderlich, Didier Briel and Thomas Huriaux.
+   Copyright 2008-2009 Didier Briel
    Copyright 2007 Zoltan Bartko
    Copyright 2007 Tiago Saboga
-
+   Copyright 2007-2008 Alex Buloichik
+   Copyright 2007-2008 Martin Fleurke
+   Copyright 2008 Fabian Mandelbaum
+   Copyright 2008 Josef Molnár (translation)
+   Copyright 2008 Jean-Christophe Helary (translation)
+   Copyright 2008 Dick Groskamp (translation)
+   Copyright 2008 Dragomir Kovačević (translation)
+   Copyright 2008 Vito Smolej (translation)
+   Copyright 2006 Martin Wunderlich
+   Copyright 2008 Andrzej Sawula
+          
    The documentation, except for the Instant Start Guide chapter, is
    Copyright 2007 Vito Smolej.
    The Instant Start Guide is Copyright 2005-2007 Samuel Murray.
@@ -62,13 +69,13 @@ License:
    or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
    License for more details.
 
-   The Debian packaging is (C) 2006-2007, Tiago Saboga
+   The Debian packaging is Copyright 2006-2009, Tiago Saboga
    <tiagosaboga@gmail.com> and is licensed under the GPL.
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software Foundation,
    Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
-On Debian GNU/Linux systems, the complete text of the latest version
+On Debian GNU/Linux systems, the complete text of the version 2
 of the GNU General Public License can be found in
-/usr/share/common-licenses/GPL.
+/usr/share/common-licenses/GPL-2.

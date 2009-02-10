@@ -1,20 +1,34 @@
-omegat (1.7.3.u2+dfsg-2) unstable; urgency=low
+omegat (1.8.1.2+dfsg-1) unstable; urgency=low
 
+  [ Tiago Saboga ]
+  * New upstream version.
+  * Move to main.
+  * Return to standard version number.
+  * debian/repack-source.sh
+    - Remove hunspell libraries.
+  * Bump policy version (no changes needed).
+  * Bump debhelper compatibility level.
+  * Ship our own version of shell wrapper, instead of patching upstream.
+  * debian/copyright - fix lintian warnings:
+    - Point to GPL-2 instead of GPL.
+    - Replace (C) by Copyright.
+  * debian/rules
+    - Install upstream changelog.
+
+  [ Onkar Shinde <onkarshinde@ubuntu.com> ]
   * debian/control
     - Use openjdk-6-jdk as build dependency.
     - Use 'openjdk-6-jre | sun-java5-jre | sun-java6-jre' as runtime
       dependency.
   * debian/rules
     - Set JAVA_HOME corresponding to openjdk-6-jdk.
-  * debain/ant.properties
+  * debian/ant.properties
     - Set default source and target values to 1.4.
-  * debian/patches
-    - 02-edit-wrapper.dpatch - Add check for OpenJDK runtime as well.
   * debian/watch
     - Fix expression to match only release versions. Do not directly use
       specific sourceforge mirror.
 
- -- Onkar Shinde <onkarshinde@ubuntu.com>  Wed, 19 Nov 2008 00:17:19 +0530
+ -- Tiago Saboga <tiagosaboga@gmail.com>  Tue, 10 Feb 2009 16:05:37 -0200
 
 omegat (1.7.3.u2+dfsg-1) unstable; urgency=low
 

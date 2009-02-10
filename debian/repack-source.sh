@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 if [ $# -ne 3 ]
 then
     echo "Usage: $0 option version filename"
@@ -21,6 +23,9 @@ rm -r "$BASEDIR"/lib
 # Remove win32 executables
 rm "$BASEDIR"/release/win32-specific/*exe
 
+# Remove hunspell libraries
+rm -r "$BASEDIR"/native
+
 # Repack
 GZIP=-9 tar -C "$TMPDIR" -czf ../omegat_${VERSION}+dfsg.orig.tar.gz "omegat-${VERSION}+dfsg"
 
@@ -31,5 +36,5 @@ rm -f "$FILENAME"
 
 if [ $1 = --upstream-version ] ;
 then
-    uupdate --upstream-version $2 $3
+    uupdate --upstream-version $2 "omegat_${VERSION}+dfsg.orig.tar.gz"
 fi
