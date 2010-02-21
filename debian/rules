@@ -1,11 +1,11 @@
 #!/usr/bin/make -f
-include /usr/share/dpatch/dpatch.make
+# include /usr/share/quilt/quilt.make
 
 JAVA_HOME=/usr/lib/jvm/java-6-openjdk
 ANT_OPTIONS=-propertyfile debian/ant.properties
 
 configure: configure-stamp
-configure-stamp: patch
+configure-stamp:
 	dh_testdir
 	touch configure-stamp
 
@@ -17,8 +17,7 @@ build-stamp: configure-stamp
 	convert images/OmegaT.ico[0] images/OmegaT.xpm
 	touch $@
 
-clean: unpatch clean-patched
-clean-patched:
+clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp configure-stamp omegat.1 images/OmegaT.xpm

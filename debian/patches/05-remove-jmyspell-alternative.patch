@@ -1,0 +1,72 @@
+Author: Tiago Saboga <tiagosaboga@gmail.com>
+Description: Do not use jmyspell, as it is not in debian.
+--- omegat-2.0.5.2+dfsg.orig/src/org/omegat/core/spellchecker/SpellChecker.java
++++ omegat-2.0.5.2+dfsg/src/org/omegat/core/spellchecker/SpellChecker.java
+@@ -45,8 +45,6 @@
+ import java.util.List;
+ import java.util.logging.Logger;
+ 
+-import org.dts.spell.dictionary.OpenOfficeSpellDictionary;
+-import org.dts.spell.dictionary.SpellDictionary;
+ import org.omegat.core.Core;
+ import org.omegat.core.CoreEvents;
+ import org.omegat.core.events.IProjectEventListener;
+@@ -79,8 +77,6 @@
+ 
+     private Hunspell hunspellSave;
+     
+-    private org.dts.spell.SpellChecker jmyspell;
+-    
+     /** the list of ignored words */
+     private List<String> ignoreList = new ArrayList<String>();
+     
+@@ -185,19 +181,7 @@
+                 LOGGER
+                         .finer("Initialize SpellChecker by Hunspell for language '"
+                                 + language + "' dictionary " + dictionaryName);
+-            } else {
+-                try {
+-                    SpellDictionary dict = new OpenOfficeSpellDictionary(new File(dictionaryName), new File(affixName), false);
+-                    jmyspell = new org.dts.spell.SpellChecker(dict);
+-                    jmyspell.setCaseSensitive(false);
+-                } catch (Exception ex) {
+-                    Log.log("Error loading jmyspell: " + ex.getMessage());
+-                    return;
+-                }
+-                LOGGER
+-                        .finer("Initialize SpellChecker by JMySpell for language '"
+-                                + language + "' dictionary " + dictionaryName);
+-            }            
++            }
+             // find out the internal project directory
+             String projectDir = 
+                     Core.getProject().getProjectProperties().getProjectInternal();
+@@ -240,10 +224,6 @@
+             saveWordLists();
+             pHunspell = null;
+         }
+-        if (jmyspell != null) {
+-            jmyspell = null;
+-        }
+-
+     }
+     
+     /**
+@@ -326,8 +306,6 @@
+                 Log.log("Unsupported encoding " + encoding);
+             }
+             return false;
+-        } else if (jmyspell != null) {
+-            return jmyspell.isCorrect(word);
+         } else {
+             return true;
+         }
+@@ -389,8 +367,6 @@
+                     }
+                 }
+             }
+-        } else if (jmyspell != null) {
+-            aList.addAll(jmyspell.getDictionary().getSuggestions(word, 20));
+         }
+         
+         return aList;

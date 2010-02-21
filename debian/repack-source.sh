@@ -11,30 +11,34 @@ fi
 
 VERSION=$2
 FILENAME=$3
+DEBVERSION="${VERSION}+dfsg"
 
-TMPDIR=`mktemp -d omegat-tmp`
-BASEDIR=$TMPDIR/omegat-${VERSION}+dfsg
+TMPDIR=`mktemp -d omegat-tmpXXXX`
+BASEDIR="$TMPDIR/omegat-${VERSION}+dfsg"
 mkdir "$BASEDIR"
 unzip -d "$BASEDIR" "$FILENAME"
 
 # Remove third-party libraries
-rm -r "$BASEDIR"/lib
+rm -r "${BASEDIR}/lib"
+rm "${BASEDIR}/nbproject/org-netbeans-modules-java-j2seproject-copylibstask.jar"
+rm -r "${BASEDIR}/test/lib"
+rm -r "${BASEDIR}/gen/lib"
 
 # Remove win32 executables
-rm "$BASEDIR"/release/win32-specific/*exe
+rm "${BASEDIR}/release/win32-specific/*exe"
 
 # Remove hunspell libraries
-rm -r "$BASEDIR"/native
+rm -r "${BASEDIR}/native"
 
 # Repack
-GZIP=-9 tar -C "$TMPDIR" -czf ../omegat_${VERSION}+dfsg.orig.tar.gz "omegat-${VERSION}+dfsg"
+GZIP=-9 tar -C "$TMPDIR" -czf "../omegat_${DEBVERSION}.orig.tar.gz" "omegat-${DEBVERSION}"
 
 # Clean temporary files
 rm -rf "$TMPDIR"
-rm -rf "$BASEDIR"
+rm -rf "${BASEDIR}"
 rm -f "$FILENAME"
 
 if [ $1 = --upstream-version ] ;
 then
-    uupdate --upstream-version $2 "omegat_${VERSION}+dfsg.orig.tar.gz"
+    uupdate --upstream-version "${DEBVERSION" "omegat_${DEBVERSION}.orig.tar.gz"
 fi

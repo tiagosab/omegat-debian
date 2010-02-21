@@ -1,3 +1,19 @@
+omegat (2.0.5.2+dfsg-1) unstable; urgency=low
+
+  * New upstream release (Closes: #558708).
+  * debian/repack-source.sh: fix repackaged file name.
+  * Bug fix: "spelling mistake in runtime dependencies of omegat", thanks
+    to Rolf Leggewie (Closes: #522655).
+  * Bug fix: "startup script choose to use openjdk, ignoring
+    alternatives.", thanks to Satoru KURASHIKI (Closes: #526239).
+  * Bug fix: "debhelper but no ${misc:Depends}", thanks to lintian.
+  * Bug fix: "patch system but no source readme", thanks to lintian.
+  * Bump policy version (no changes needed).
+  * Change to quilt patching system.
+  * Switch to dpkg-source 3.0 (quilt) format
+
+ -- Tiago Saboga <tiagosaboga@gmail.com>  Sun, 21 Feb 2010 16:49:48 -0300
+
 omegat (1.8.1.2+dfsg-1) unstable; urgency=low
 
   [ Tiago Saboga ]
