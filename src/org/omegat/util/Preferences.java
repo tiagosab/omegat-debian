@@ -4,8 +4,9 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey, Maxym Mykhalchuk, and Henry Pijffers
- Portions copyright 2007 - Zoltan Bartko - bartkozoltan@bartkozoltan.com
-               Home page: http://www.omegat.org/omegat/omegat.html
+               2007 Zoltan Bartko
+               2008-2009 Didier Briel
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -27,13 +28,15 @@ package org.omegat.util;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.omegat.filters2.TranslationException;
 import org.omegat.util.xml.XMLBlock;
@@ -46,6 +49,8 @@ import org.omegat.util.xml.XMLStreamReader;
  * @author Keith Godfrey
  * @author Maxym Mykhalchuk
  * @author Henry Pijffers
+ * @author Zoltan Bartko - bartkozoltan@bartkozoltan.com
+ * @author Didier Briel
  */
 public class Preferences
 {
@@ -59,6 +64,7 @@ public class Preferences
     public static final String SOURCE_FOLDER	= "source_folder";				// NOI18N
     public static final String TARGET_FOLDER	= "target_folder";				// NOI18N
     public static final String TM_FOLDER		= "tm_folder";                  // NOI18N
+    public static final String DICT_FOLDER      = "dict_folder";                  // NOI18N
     public static final String GLOSSARY_FOLDER	= "glossary_folder";            // NOI18N
     
     public static final String MAINWINDOW_WIDTH  = "screen_width";              // NOI18N
@@ -72,7 +78,9 @@ public class Preferences
     public static final String PROJECT_FILES_WINDOW_HEIGHT = "project_files_window_height"; // NOI18N
     public static final String PROJECT_FILES_WINDOW_X      = "project_files_window_x";      // NOI18N
     public static final String PROJECT_FILES_WINDOW_Y      = "project_files_window_y";      // NOI18N
-    
+    // Using the main font for the Project Files window
+    public static final String PROJECT_FILES_USE_FONT      = "project_files_use_font";      // NOI18N
+        
     // Search window size and position    
     public static final String SEARCHWINDOW_WIDTH           = "search_window_width";            // NOI18N
     public static final String SEARCHWINDOW_HEIGHT          = "search_window_height";           // NOI18N
@@ -82,6 +90,7 @@ public class Preferences
     public static final String SEARCHWINDOW_CASE_SENSITIVE  = "search_window_case_sensitive";   // NOI18N
     public static final String SEARCHWINDOW_REG_EXPRESSIONS = "search_window_reg_expressions";  // NOI18N
     public static final String SEARCHWINDOW_TM_SEARCH       = "search_window_tm_search";        // NOI18N
+    public static final String SEARCHWINDOW_ALL_RESULTS     = "search_window_all_results";
     public static final String SEARCHWINDOW_DIR             = "search_window_dir";              // NOI18N
     public static final String SEARCHWINDOW_SEARCH_FILES    = "search_window_search_files";     // NOI18N
     public static final String SEARCHWINDOW_RECURSIVE       = "search_window_search_recursive"; // NOI18N
@@ -104,6 +113,8 @@ public class Preferences
     /** Always confirm Quit, even if the project is saved */
     public static final String ALWAYS_CONFIRM_QUIT     = "always_confirm_quit"; // NOI18N
     
+    public static final String ALLOW_GOOGLE_TRANSLATE = "allow_google_translate";
+    
     /** Mark the translated segments with a different color */
     public static final String MARK_TRANSLATED_SEGMENTS = "mark_translated_segments";   // NOI18N
     
@@ -122,6 +133,8 @@ public class Preferences
     public static final String BEST_MATCH_MINIMAL_SIMILARITY_DEFAULT = "80";                    // NOI18N
     /** Workflow Option: Insert Explanatory Text before the Best Fuzzy Match */
     public static final String BEST_MATCH_EXPLANATORY_TEXT = "wf_explanatoryText";              // NOI18N
+    /** Workflow Option: Export current segment  */
+    public static final String EXPORT_CURRENT_SEGMENT = "wf_exportCurrentSegment"; // NOI18N
 
     
     /** 
@@ -151,9 +164,9 @@ public class Preferences
     static
     {
         m_loaded = false;
-        m_preferenceMap = new HashMap(64);
-        m_nameList = new ArrayList(32);
-        m_valList = new ArrayList(32);
+        m_preferenceMap = new HashMap<String, Integer>(64);
+        m_nameList = new ArrayList<String>(32);
+        m_valList = new ArrayList<String>(32);
         m_changed = false;
         doLoad();
     }
@@ -173,12 +186,12 @@ public class Preferences
         if (!m_loaded)
             doLoad();
         
-        Integer i = (Integer) m_preferenceMap.get(key);
+        Integer i = m_preferenceMap.get(key);
         String v = "";								// NOI18N
         if (i != null)
         {
             // mapping exists - recover defaultValue
-            v = (String) m_valList.get(i.intValue());
+            v = m_valList.get(i);
         }
         return v;
     }
@@ -254,11 +267,11 @@ public class Preferences
         {
             if (!m_loaded)
                 doLoad();
-            Integer i = (Integer) m_preferenceMap.get(name);
+            Integer i = m_preferenceMap.get(name);
             if (i == null)
             {
                 // defaultValue doesn't exist - add it
-                i = new Integer(m_valList.size());
+                i = m_valList.size();
                 m_preferenceMap.put(name, i);
                 m_valList.add(value);
                 m_nameList.add(name);
@@ -317,7 +330,7 @@ public class Preferences
             xml.killEmptyBlocks();
             xml.setStream(new File(StaticUtils.getConfigDir() + FILE_PREFERENCES));
             XMLBlock blk;
-            ArrayList lst;
+            List<XMLBlock> lst;
             
             m_preferenceMap.clear();
             String pref;
@@ -341,10 +354,9 @@ public class Preferences
             if (lst == null)
                 return;
             
-            Integer j;
             for (int i=0; i<lst.size(); i++)
             {
-                blk = (XMLBlock) lst.get(i);
+                blk = lst.get(i);
                 if (blk.isClose())
                     continue;
                 
@@ -352,7 +364,7 @@ public class Preferences
                     continue;
                 
                 pref = blk.getTagName();
-                blk = (XMLBlock) lst.get(++i);
+                blk = lst.get(++i);
                 if (blk.isTag())
                 {
                     // parse error - keep trying
@@ -362,8 +374,7 @@ public class Preferences
                 if (pref != null && !pref.equals("") && val != null)		// NOI18N
                 {
                     // valid match - record these
-                    j = new Integer(m_valList.size());
-                    m_preferenceMap.put(pref, j);
+                    m_preferenceMap.put(pref, m_valList.size());
                     m_nameList.add(pref);
                     m_valList.add(val);
                 }
@@ -391,6 +402,9 @@ public class Preferences
             Log.logErrorRB("PM_UNSUPPORTED_ENCODING"); // NOI18N
             Log.log(e3);
         }
+        catch (FileNotFoundException ex) {
+        	// there is no config file yet
+        }
         catch (IOException e4)
         {
             // can't read file - forget about it and move on
@@ -411,8 +425,8 @@ public class Preferences
         
         for (int i=0; i<m_nameList.size(); i++)
         {
-            String name = (String) m_nameList.get(i);
-            String val = StaticUtils.makeValidXML((String) m_valList.get(i));
+            String name = m_nameList.get(i);
+            String val = StaticUtils.makeValidXML(m_valList.get(i));
             if (val.equals(""))							// NOI18N
                 continue;	// don't write blank preferences
             out.write("    <" + name + ">");					// NOI18N
@@ -431,9 +445,8 @@ public class Preferences
     
     // use a hash map for fast lookup of data
     // use array lists for orderly recovery of it for saving to disk
-    private static ArrayList m_nameList;
-    private static ArrayList m_valList;
-    private static HashMap   m_preferenceMap;
-    
+    private static List<String> m_nameList;
+    private static List<String> m_valList;
+    private static Map<String,Integer>   m_preferenceMap;    
 }
 

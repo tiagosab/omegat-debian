@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -28,12 +28,11 @@ import java.beans.ExceptionListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.PatternSyntaxException;
-import javax.swing.event.EventListenerList;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
+
 import javax.swing.table.AbstractTableModel;
 
 import org.omegat.core.segmentation.MapRule;
+import org.omegat.core.segmentation.Rule;
 import org.omegat.core.segmentation.SRX;
 import org.omegat.util.OStrings;
 
@@ -56,7 +55,7 @@ public class MappingRulesModel extends AbstractTableModel
 
     public Object getValueAt(int rowIndex, int columnIndex)
     {
-        MapRule maprule = (MapRule)srx.getMappingRules().get(rowIndex);
+        MapRule maprule = srx.getMappingRules().get(rowIndex);
         switch( columnIndex )
         {
             case 0:
@@ -95,7 +94,7 @@ public class MappingRulesModel extends AbstractTableModel
     
     public void setValueAt(Object aValue, int rowIndex, int columnIndex)
     {
-        MapRule maprule = (MapRule)srx.getMappingRules().get(rowIndex);
+        MapRule maprule = srx.getMappingRules().get(rowIndex);
         switch( columnIndex )
         {
             case 0:
@@ -114,7 +113,7 @@ public class MappingRulesModel extends AbstractTableModel
         }
     }
 
-    public Class getColumnClass(int columnIndex)
+    public Class<?> getColumnClass(int columnIndex)
     {
         return String.class;
     }
@@ -126,7 +125,7 @@ public class MappingRulesModel extends AbstractTableModel
         srx.getMappingRules().add(new MapRule(
                 OStrings.getString("SEG_NEW_LN_CO"),
                 "LN-CO",                                                        // NOI18N
-                new ArrayList()));
+                new ArrayList<Rule>()));
         fireTableRowsInserted(rows, rows);
         return rows;
     }
@@ -141,8 +140,8 @@ public class MappingRulesModel extends AbstractTableModel
     /** Moves a mapping rule up an order. */
     public void moveRowUp(int row)
     {
-        MapRule maprulePrev = (MapRule)srx.getMappingRules().get(row-1);
-        MapRule maprule = (MapRule)srx.getMappingRules().get(row);
+        MapRule maprulePrev = srx.getMappingRules().get(row-1);
+        MapRule maprule = srx.getMappingRules().get(row);
         srx.getMappingRules().remove(row-1);
         srx.getMappingRules().add(row, maprulePrev);
         fireTableRowsUpdated(row-1, row);
@@ -151,8 +150,8 @@ public class MappingRulesModel extends AbstractTableModel
     /** Moves a mapping rule down an order. */
     public void moveRowDown(int row)
     {
-        MapRule mapruleNext = (MapRule)srx.getMappingRules().get(row+1);
-        MapRule maprule = (MapRule)srx.getMappingRules().get(row);
+        MapRule mapruleNext = srx.getMappingRules().get(row+1);
+        MapRule maprule = srx.getMappingRules().get(row);
         srx.getMappingRules().remove(row+1);
         srx.getMappingRules().add(row, mapruleNext);
         fireTableRowsUpdated(row, row+1);
@@ -163,7 +162,7 @@ public class MappingRulesModel extends AbstractTableModel
 //
 
     /** List of listeners */
-    protected List listeners = new ArrayList();
+    protected List<ExceptionListener> listeners = new ArrayList<ExceptionListener>();
 
     public void addExceptionListener(ExceptionListener l) 
     {
@@ -179,7 +178,7 @@ public class MappingRulesModel extends AbstractTableModel
     {
 	for(int i=listeners.size()-1; i>=0; i--) 
         {
-            ExceptionListener l = (ExceptionListener)listeners.get(i);
+            ExceptionListener l = listeners.get(i);
             l.exceptionThrown(e);
 	}
     }

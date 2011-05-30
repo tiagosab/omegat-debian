@@ -3,8 +3,9 @@
           with fuzzy matching, translation memory, keyword search, 
           glossaries, and translation leveraging into updated projects.
 
- Copyright (C) 2007 - Zoltan Bartko - bartkozoltan@bartkozoltan.com
-               Home page: http://www.omegat.org/omegat/omegat.html
+ Copyright (C) 2007 Zoltan Bartko 
+               2009 Didier Briel
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -28,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import org.omegat.util.OConsts;
@@ -36,7 +38,8 @@ import org.omegat.util.StaticUtils;
 
 /**
  * Dictionary manager. Spell checking dictionaries' utility functions.
- * @author bartkoz
+ * @author Zoltan Bartko - bartkozoltan@bartkozoltan.com
+ * @author Didier Briel
  */
 public class DictionaryManager {
     
@@ -71,12 +74,10 @@ public class DictionaryManager {
     /**
      * returns a list of full names of dictionaries from a dictionary code list
      */
-    public ArrayList getDictionaryNameList(ArrayList aList) {
-        ArrayList result = new ArrayList();
+    public List<String> getDictionaryNameList(List<String> aList) {
+        List<String> result = new ArrayList<String>();
         
-        for (int i = 0; i < aList.size(); i++) {
-            String dic = (String) aList.get(i);
-            
+        for (String dic : aList) {
             String parts[] = dic.split("_");
             Locale locale;
             if (parts.length == 1)
@@ -92,15 +93,15 @@ public class DictionaryManager {
     /**
      * return a list of full names of the local dictionaries
      */
-    public ArrayList getLocalDictionaryNameList() {
+    public List<String> getLocalDictionaryNameList() {
         return getDictionaryNameList(getLocalDictionaryCodeList());
     }
     
     /**
      * returns a list of available dictionaries in the xx_YY form
      */
-    public ArrayList getLocalDictionaryCodeList() {
-        ArrayList result = new ArrayList();
+    public List<String> getLocalDictionaryCodeList() {
+        List<String> result = new ArrayList<String>();
         
         String[] affixFiles;
         String[] dictionaryFiles;
@@ -172,23 +173,22 @@ public class DictionaryManager {
      * return a list of names of installable dictionaries 
      * (e.g. en_US - english (USA))
      */
-    public ArrayList getInstallableDictionaryNameList() throws IOException {
+    public List<String> getInstallableDictionaryNameList() throws IOException {
         return getDictionaryNameList(getInstallableDictionaryCodeList());
     }
     
     /**
      * returns a list of codes (xx_YY) of installable dictionaries
      */
-    public ArrayList getInstallableDictionaryCodeList() throws IOException {
-        ArrayList localDicList = getLocalDictionaryCodeList();
+    public List<String> getInstallableDictionaryCodeList() throws IOException {
+        List<String> localDicList = getLocalDictionaryCodeList();
         
-        ArrayList remoteDicList = getRemoteDictionaryCodeList();
+        List<String> remoteDicList = getRemoteDictionaryCodeList();
         
-        ArrayList result = new ArrayList();
+        List<String> result = new ArrayList<String>();
         
         // compare the two lists
-        for (int i = 0; i < remoteDicList.size(); i++) {
-            String dicCode = (String) remoteDicList.get(i);
+        for (String dicCode : remoteDicList) {
             if (!localDicList.contains(dicCode))
                 result.add(dicCode);
         }
@@ -199,8 +199,8 @@ public class DictionaryManager {
     /**
      * downloads the list of available dictionaries from the net
      */
-    private ArrayList getRemoteDictionaryCodeList() throws IOException {
-        ArrayList result = new ArrayList();
+    private List<String> getRemoteDictionaryCodeList() throws IOException {
+        List<String> result = new ArrayList<String>();
         
         // download the file
         String htmlfile = StaticUtils.downloadFileToString(
@@ -240,7 +240,15 @@ public class DictionaryManager {
         
         StaticUtils.downloadFileToDisk(from, to);
         
-        ArrayList filenames = new ArrayList();
+        // Dirty hack for the French dictionary. Since it is named
+        // fr_FR_1-3-2.zip, we remove the "_1-3-2" portion
+        // [ 2138846 ] French dictionary cannot be downloaded and installed
+        int pos;
+        if ( (pos = langCode.indexOf("_1-3-2", 0)) != -1 ){
+            langCode = langCode.substring(0, pos);
+        }
+
+        List<String> filenames = new ArrayList<String>();
         
         filenames.add(langCode + OConsts.SC_AFFIX_EXTENSION);
         filenames.add(langCode + OConsts.SC_DICTIONARY_EXTENSION);

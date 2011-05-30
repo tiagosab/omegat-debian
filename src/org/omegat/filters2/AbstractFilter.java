@@ -5,7 +5,7 @@
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
  Portions Copyright (C) 2006 Martin Wunderlich
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -28,7 +28,6 @@ package org.omegat.filters2;
 import java.awt.Dialog;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.StringWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -36,10 +35,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
-import org.omegat.filters2.master.FilterMaster;
 import org.omegat.util.OStrings;
 
 /**
@@ -95,6 +94,7 @@ public abstract class AbstractFilter
         TFP_TARGET_COUNTRY_CODE
     };
     
+    protected IParseCallback entryProcessingCallback;
     
     /**
      * The default output filename pattern.
@@ -365,7 +365,7 @@ public abstract class AbstractFilter
      *
      * @author Martin Wunderlich
      */
-    public List processFile(File inFile, String inEncoding, File outFile, String outEncoding) throws IOException, TranslationException
+    public List<File> processFile(File inFile, String inEncoding, File outFile, String outEncoding) throws IOException, TranslationException
     {
     	BufferedReader reader = createReader(inFile, inEncoding);
     	BufferedWriter writer;
@@ -394,6 +394,17 @@ public abstract class AbstractFilter
      */
     protected final String processEntry(String entry)
     {
-        return FilterMaster.getInstance().processEntry(entry);
+        return entryProcessingCallback.processEntry(entry);
+       // return FilterMaster.getInstance().processEntry(entry);
+    }
+
+    /**
+     * Set callback for process entry. Every who executes parsing should setup
+     * this callback.
+     * 
+     * @param callback
+     */
+    public void setParseCallback(IParseCallback callback) {
+        this.entryProcessingCallback = callback;
     }
 }

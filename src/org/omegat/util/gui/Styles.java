@@ -5,7 +5,7 @@
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
  Portions copyright 2007 - Zoltan Bartko - bartkozoltan@bartkozoltan.com
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 package org.omegat.util.gui;
 
 import java.awt.Color;
+
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.text.AttributeSet;
@@ -54,10 +55,7 @@ public final class Styles
     
     /** untranslated text */
     public final static MutableAttributeSet UNTRANSLATED;
-    
-    /** misspelled text */
-    public final static MutableAttributeSet MISSPELLED;
-    
+        
     /** Disabled, i.e grayed out text. */
     public final static MutableAttributeSet DISABLED;
     
@@ -99,15 +97,7 @@ public final class Styles
         TEXT_EXTRA = new SimpleAttributeSet();
         StyleConstants.setForeground(TEXT_EXTRA, Color.blue);
         TEXT_BORDER = new SimpleAttributeSet();
-        StyleConstants.setForeground(TEXT_BORDER, Color.green);
-        
-        // using red custom jagged underline, as seen in fine word processors
-        // and IDEs.
-        MISSPELLED = new SimpleAttributeSet();
-        StyleConstants.setForeground(MISSPELLED, Color.black);
-        ExtendedLabelView.setCustomUnderline(MISSPELLED, 
-                ExtendedLabelView.RED_JAGGED_UNDERLINE);
-        
+        StyleConstants.setForeground(TEXT_BORDER, Color.green);        
     }
     
     /**
@@ -127,9 +117,6 @@ public final class Styles
         StyleConstants.setForeground(result, StyleConstants.getForeground(toApply));
         StyleConstants.setBold(result, StyleConstants.isBold(toApply));
         StyleConstants.setUnderline(result, StyleConstants.isUnderline(toApply));
-        // make sure the custom underlining is copied, too
-        ExtendedLabelView.setCustomUnderline(result, 
-                ExtendedLabelView.getCustomUnderline(toApply));
         
         return result;
 }

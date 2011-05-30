@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -67,7 +67,7 @@ public final class PluginUtils
      */
     public static void loadPlugins()
     {
-        plugins = new ArrayList();
+        plugins = new ArrayList<List<Object>>();
         File pluginsDir = new File("plugins/");                                 // NOI18N
         if( pluginsDir.exists() && pluginsDir.isDirectory() )
             loadPluginsFrom(pluginsDir);
@@ -79,13 +79,13 @@ public final class PluginUtils
     private static void loadPluginsFrom(File dir)
     {
         File[] filters = dir.listFiles(new JARorFolderFileFilter());
-        for(int i=0; i<filters.length; i++)
+        for(File filter : filters)
         {
-            if( filters[i].isFile() )
+            if( filter.isFile() )
             {
                 try
                 {
-                    URL jar = filters[i].toURL();
+                    URL jar = filter.toURL();
                     loadOnePlugin(jar);
                 }
                 catch( MalformedURLException mue )
@@ -93,18 +93,18 @@ public final class PluginUtils
                     // nothing is really wrong
                     // strange exception
                     Log.log("Couldn't access local file system " +      // NOI18N
-                            "to get '"+filters[i]+"' !");                       // NOI18N
+                            "to get '"+filter+"' !");                       // NOI18N
                 }
                 catch( IOException ioe )
                 {
                     // nothing is really wrong
                     // we just couldn't load one JAR
                     Log.log("Couldn't load plugin JAR '"+               // NOI18N
-                            filters[i]+"' !");                                  // NOI18N
+                            filter+"' !");                                  // NOI18N
                 }
             }
             else
-                loadPluginsFrom(filters[i]);
+                loadPluginsFrom(filter);
         }
     }
     
@@ -122,22 +122,21 @@ public final class PluginUtils
         if( mainattribs.getValue("OmegaT-Plugin")==null )                       // NOI18N
             return; // it's not OmegaT plugin
         
-        List filterList = new ArrayList();
+        List<Object> filterList = new ArrayList<Object>();
         filterList.add(jar);
         
-        Map entries = manifest.getEntries();
-        String[] keys = (String[])entries.keySet().toArray(new String[]{});
-        for(int i=0; i<keys.length; i++)
+        Map<String,Attributes> entries = manifest.getEntries();
+        for(String key : entries.keySet())
         {
-            Attributes attrs = (Attributes)entries.get(keys[i]);
+            Attributes attrs = (Attributes)entries.get(key);
             String name = attrs.getValue("Name");                               // NOI18N
             String isfilter = attrs.getValue("OmegaT-Filter");                  // NOI18N
             if( isfilter!=null && isfilter.equals("true") )                     // NOI18N
             {
-                filterList.add(keys[i]);
+                filterList.add(key);
                 try
                 {
-                    URLClassLoader.newInstance(new URL[] {jar}).loadClass(keys[i]);
+                    URLClassLoader.newInstance(new URL[] {jar}).loadClass(key);
                 }
                 catch( ClassNotFoundException e )
                 {
@@ -167,7 +166,7 @@ public final class PluginUtils
         AbstractFilter filterObject = null;
         try
         {
-            Class filterClass;
+            Class<?> filterClass;
             if( filter.isFromPlugin() )
             {
                 ClassLoader plugins_cl = getPluginsClassloader();
@@ -175,7 +174,7 @@ public final class PluginUtils
             }
             else
                 filterClass = Class.forName(filter.getClassName());
-            Constructor filterConstructor = filterClass.getConstructor((Class[])null);
+            Constructor<?> filterConstructor = filterClass.getConstructor((Class[])null);
             filterObject = (AbstractFilter)filterConstructor.newInstance((Object[])null);
             filterObject.setOptions(filter.getOptions());
         }
@@ -207,22 +206,22 @@ public final class PluginUtils
     {
         if( !plugins.equals(old_plugins) )
         {
-            List jars = new ArrayList(plugins.size());
+            List<URL> jars = new ArrayList<URL>(plugins.size());
             for(int i=0; i<plugins.size(); i++)
             {
-                List pfilters = (List)plugins.get(i);
+                List<Object> pfilters = plugins.get(i);
                 URL jarurl = (URL)pfilters.get(0);
                 jars.add(jarurl);
             }
-            plugins_cl = new URLClassLoader((URL[])jars.toArray(new URL[plugins.size()]));
-            old_plugins = new ArrayList();
+            plugins_cl = new URLClassLoader(jars.toArray(new URL[plugins.size()]));
+            old_plugins = new ArrayList<List<Object>>();
             old_plugins.addAll(plugins);
         }
         return plugins_cl;
     }
 
     /** Holds the list of plugins. */
-    private static List plugins;
+    private static List<List<Object>> plugins;
     
     /**
      * The list of plugins.
@@ -234,13 +233,13 @@ public final class PluginUtils
      * <li>further elements are names of filter classes
      * </ul>
      */
-    public static List getPlugins()
+    public static List<List<Object>> getPlugins()
     {
         return plugins;
     }
 
     /** Old list of plugins we already created a classloader for. */
-    private static List old_plugins = null;
+    private static List<List<Object>> old_plugins = null;
     /** Class Loader for filter plugins. */
     private static ClassLoader plugins_cl = null;
     

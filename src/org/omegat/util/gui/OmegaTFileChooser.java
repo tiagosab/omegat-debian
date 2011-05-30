@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -24,19 +24,12 @@
 
 package org.omegat.util.gui;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
 import java.io.File;
-import java.io.IOException;
-import javax.swing.Action;
-import javax.swing.AbstractAction;
+
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JComponent;
 import javax.swing.JFileChooser;
-import javax.swing.KeyStroke;
 
-import org.omegat.core.threads.CommandThread;
 import org.omegat.util.OConsts;
 import org.omegat.util.OStrings;
 import org.omegat.util.Preferences;

@@ -1,6 +1,6 @@
-Deze vertaling is het werk van Dick Groskamp, copyright© 2008.
+Deze vertaling is het werk van Dick Groskamp, copyright© 2009.
 
-OmegaT 1.8.0, LeesMij-bestand
+OmegaT 2.0, LeesMij-bestand
 
   1.  Informatie over OmegaT
   2.  Wat is OmegaT?
@@ -16,7 +16,7 @@ OmegaT 1.8.0, LeesMij-bestand
 De meest recente informatie over OmegaT kan worden gevonden op
       http://www.omegat.org/
 
-Gebruikersondersteuning op de Yahoogebruikersgroep(meertalig), waar zonder abonnement de archieven kunnen worden doorzocht:
+Gebruikersondersteuning op de Yahoo gebruikersgroep(meertalig), waar zonder abonnement de archieven kunnen worden doorzocht:
      http://groups.yahoo.com/group/OmegaT/
 
 Verzoeken tot verbeteringen (in het Engels) op de SourceForge-website:
@@ -34,11 +34,14 @@ OmegaT's belangrijkste mogelijkheden zijn:
   - de mogelijkheid om op elk besturingssysteem, dat Java ondersteunt, te kunnen worden uitgevoerd
   - gebruik van elk geldig TMX-bestand als een vertalingsverwijzing
   - flexibele zinsegmentering (door middel van een SRX-achtige methode)
-  - zoekacties in het project en de vertalingsgeheugens waarnaar verwezen wordt
+  - zoekacties in het project en de vertaalgeheugens waarnaar verwezen wordt
   - zoekacties in bestanden in ondersteunde formaten in elke map
   - fuzzy overeenkomsten
   - slimme afhandeling van projecten inclusief complexe mappenhiërarchiën
   - ondersteuning voor woordenlijsten (terminologie-controles)
+  - ondersteuning voor Open Bron direct-gemaakte spellingcontroles
+  - ondersteuning voor StarDict woordenboeken
+  - ondersteuning voor de Google Translate machinale vertaalservices
   - heldere en uitgebreide documentatie en handleiding
   - vertaald in een aantal talen.
 
@@ -53,6 +56,11 @@ OmegaT ondersteunt standaard de volgende bestandsformaten:
   - DocBook documentatie bestandsformaat
   - Microsoft OpenXML-bestanden
   - Okapi ééntalige XLIFF-bestanden
+  - QuarkXPress CopyFlowGold
+  - Bestanden voor ondertiteling (SRT)
+  - ResX
+  - Android-bron
+  - LaTeX
 
 OmegaT kan ook worden aangepast voor andere bestandsformaten.
 
@@ -67,10 +75,24 @@ De gebruikershandleiding zit in het pakket dat u zojuist heeft gedownload. U kun
 
 3.1 Algemeen
 OmegaT vereist dat een Java Runtime Environment (JRE) versie 
-1.4 of hoger is geïnstalleerd op uw systeem om uitgevoerd te kunnen worden. OmegaT is nu standaard voorzien van de Java Runtime Environment om gebruikers de moeite van het
+1.5 of hoger is geïnstalleerd op uw systeem om uitgevoerd te kunnen worden. OmegaT is nu standaard voorzien van de Java Runtime Environment om gebruikers de moeite van het
 selecteren, verkrijgen en installeren te besparen. 
 
-Windows- en Linuxgebruikers: als u er van overtuigd bent dat op uw systeem al een passende versie van de JRE is geïnstalleerd, dan kunt u de versie van OmegaT zonder de JRE installeren (dit wordt aangegeven in de naam van de versie, namelijk"Without_JRE"). 
+Als u al Java hebt is de eenvoudigste manier om de huiidige versie van OmegaT te installeren de Java Web Start te gebruiken. 
+Download daarvoor het volgende bestand en voer het uit:
+
+   http://omegat.sourceforge.net/webstart/OmegaT.jnlp
+
+Het zal de juiste omgeving voor uw computer installeren en de toepassing zelf bij de eerste uitvoering er van. Latere aanroepen behoeven niet online te worden gedaan.
+
+Gedurende de installatie, afhankelijk van uw besturingssysteem, zou u verschillende veiligheidswaarschuwingen kunnen krijgen. Het certificaat is zelf-ondertekend door "Didier Briel". 
+De toestemmingen die u deze versie geeft (welke kunnen worden vermeld als "onbeperkte toegang tot de computer") zijn identiek aan de toestemmingen die u aan de lokale versie geeft, als die wordt geïinstalleerd door de procedure die later wordt beschreven: zij geven toegang tot de harde schijf van de computer. Opeenvolgend klikken op  OmegaT.jnlp 
+zal controleren op upgrades, indien u online bent, ze installeren als er zijn, 
+en dan OmegaT starten. 
+
+De alternatieve manieren voor het downloaden en installeren van OmegaT worden hieronder vermeld. 
+
+Windows- en Linuxgebruikers: als u er van overtuigd bent dat op uw systeem al een passende versie van de JRE is geïnstalleerd, dan kunt u de versie van OmegaT zonder de JRE installeren (dit wordt aangegeven in de naam van de versie, namelijk "Without_JRE"). 
 Als u twijfelt raden wij u aan om de "standaard" versie te gebruiken, 
 dus met de JRE. Dat is veilig omdat, zelfs als er al een JRE op uw systeem geïnstalleerd is, deze versie die niet zal beïnvloeden.
 
@@ -80,7 +102,9 @@ Sun's Java Runtime Environment (JRE) via bovenstaande koppeling of download en i
 Mac-gebruikers: de JRE is al geïnstalleerd op Mac OS X.
 
 Linux op PowerPC-systemen: gebruikers moeten IBM's JRE downloaden omdat Sun geen JRE voor PPC-systemen levert. Download in dit geval van:
+
     http://www-128.ibm.com/developerworks/java/jdk/linux/download.html 
+
 
 3.2 Installatie
 * Windows-gebruikers: Start eenvoudigweg het installatieprogramma. Het installatieprogramma kan snelkoppelingen maken om OmegaT te starten, als u dat wilt.
@@ -92,8 +116,7 @@ OmegaT kan op een aantal manieren worden gestart.
 
 * Windows-gebruikers: door te klikken op het bestand OmegaT.exe. Als u het bestand OmegaT wel in uw bestandsbeheer (Windows Verkenner) kunt zien, maar niet OmegaT.exe, wijzig dan de instellingen zodat bestandsextensies worden weergegeven.
 
-* Door te dubbelklikken op het bestand OmegaT.jar. Dit zal alleen werken als het bestandstype .jar
-op uw systeem is gekoppeld aan Java.
+* Door te dubbelklikken op het bestand OmegaT.jar. Dit zal alleen werken als het bestandstype .jar op uw systeem is gekoppeld aan Java.
 
 * Vanaf de opdrachtregel. De opdracht om OmegaT te starten is:
 
@@ -105,17 +128,17 @@ cd <map waar het bestand OmegaT.jar is opgeslagen>
 Indien Java is geïnstalleerd op systeemniveau hoeft niet het volledige pad te worden ingevoerd.)
 
 * Windows-gebruikers: Het installatieprogramma kan voor u snelkoppelingen maken in het start 
-menu, op het bureablad en in het gebied voor snel starten. U kunt ook handmatig het bestand OmegaT.exe naar het startmenu, op het bureablad en in het gebied voor snel starten slepen om het van daaruit te koppelen.
+menu, op het bureaublad en in het gebied voor snel starten. U kunt ook handmatig het bestand OmegaT.exe naar het startmenu, op het bureaublad en in het gebied voor snel starten slepen om het van daaruit te koppelen.
 
 * Linux KDE-gebruikers: u kunt OmegaT als volgt aan uw menu's toevoegen:
 
 Controlecentrum - Bureaublad - Panelen - Menu's - Bewerken K Menu - Bestand - Nieuw item/Nieuw submenu
 
-Dan, na het selecteren van een passend menu, voeg een submenu/item toe met <c0>Bestand - Nieuw submenu en Bestand - Nieuw item</c0>. Voer OmegaT in als de naam van het nieuwe item.
+Dan, na het selecteren van een passend menu, voeg een submenu/item toe met Bestand - Nieuw submenu en Bestand - Nieuw item. Voer OmegaT in als de naam van het nieuwe item.
 
 Gebruik, in het veld "Commando", de navigatieknop om uw OmegaT startscript te vinden en selecteer dat. 
 
-Klik op de pictogrammenknop (rechts van de velden Naam/Beschrijving/Commentaar) - Andere pictogrammen - Bladeren en navigeer naar de submap /images in de OmegaT-toepassingsmap. Selecteer het picotgram OmegaT.png.
+Klik op de pictogrammenknop (rechts van de velden Naam/Beschrijving/Commentaar) - Andere pictogrammen - Bladeren en navigeer naar de submap /images in de OmegaT-toepassingsmap. Selecteer het pictogram OmegaT.png.
 
 Sla tenslotte de wijzigingen op met Bestand - Opslaan.
 
@@ -153,11 +176,11 @@ Code is bijgedragen door
   Kim Bruning
   Alex Buloichik
   Sandra Jean Chua
-  Martin Fleurke  
+  Martin Fleurke 
   Thomas Huriaux
   Fabián Mandelbaum
   Maxym Mykhalchuk 
-  Henry Pijffers 
+  Henry Pijffers
   Tiago Saboga
   Andrzej Sawuła
   Benjamin Siband
@@ -166,7 +189,7 @@ Code is bijgedragen door
 Andere bijdragen door
   Sabine Cretella
   Dmitri Gabinski
-  Jean-Christophe Helary
+  Jean-Christophe Helary (localisatiemanager)
   Vito Smolej (documentatiemanager)
   Samuel Murray
   Marc Prior (localisatiemanager)
@@ -191,11 +214,9 @@ OmegaT gebruikt de volgende bibliotheken:
 
   Swing-Layout 1.0.2 (LGPL-licentie)
 
-  Backport-util-concurrent (Publiek Domein)
-
-  Retroweaver 2.0.1 (Retroweaver-licentie)
-
   Jmyspell 2.1.4 (LGPL-licentie)
+
+  JAXB 2.1.7 (GPLv2 + klassenpad uitzondering)
 
 ==============================================================================
  5.  Heeft u problemen met OmegaT ? Heeft u hulp nodig?

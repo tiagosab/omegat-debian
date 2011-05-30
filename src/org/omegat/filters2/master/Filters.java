@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -28,6 +28,8 @@ import java.io.Serializable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+
 import javax.swing.table.AbstractTableModel;
 
 import org.omegat.util.OStrings;
@@ -54,7 +56,7 @@ public class Filters extends AbstractTableModel implements Serializable
     }
     
     /** Holds the list of available filters. */
-    private ArrayList filters = new ArrayList();
+    private List<OneFilter> filters = new ArrayList<OneFilter>();
     
     /** 
      * Returns the number of filters. 
@@ -69,14 +71,14 @@ public class Filters extends AbstractTableModel implements Serializable
      */
     public OneFilter[] getFilter()
     {
-        return (OneFilter[])filters.toArray(new OneFilter[0]);
+        return filters.toArray(new OneFilter[0]);
     }
     /**
      * Sets all filters from the array.
      */
     public void setFilter(OneFilter[] filter)
     {
-        filters = new ArrayList(Arrays.asList(filter));
+        filters = new ArrayList<OneFilter>(Arrays.asList(filter));
     }
     
     /**
@@ -84,7 +86,7 @@ public class Filters extends AbstractTableModel implements Serializable
      */
     public OneFilter getFilter(int index)
     {
-        return (OneFilter)filters.get(index);
+        return filters.get(index);
     }
     /**
      * Sets a filter by index.
@@ -104,8 +106,8 @@ public class Filters extends AbstractTableModel implements Serializable
      */
     public void addFilter(OneFilter filter)
     {
-        for(int i=0; i<filters.size(); i++)
-            if(getFilter(i).getClassName().equals(filter.getClassName()))
+        for(OneFilter f : filters)
+            if(f.getClassName().equals(filter.getClassName()))
                 return;
         filters.add(filter);
     }
@@ -141,7 +143,7 @@ public class Filters extends AbstractTableModel implements Serializable
         return null;
     }
     
-    public Class getColumnClass(int columnIndex)
+    public Class<?> getColumnClass(int columnIndex)
     {
         switch( columnIndex )
         {

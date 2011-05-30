@@ -4,8 +4,8 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-           (C) 2007 Didier Briel
-               Home page: http://www.omegat.org/omegat/omegat.html
+           (C) 2007-2010 Didier Briel
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -25,9 +25,7 @@
 
 package org.omegat.filters3.xml.openxml;
 
-import org.omegat.core.threads.CommandThread;
 import org.omegat.filters3.xml.DefaultXMLDialect;
-import org.omegat.filters3.xml.openxml.*;
 
 /**
  * Dialect of Open XML files.
@@ -55,26 +53,29 @@ public class OpenXMLDialect extends DefaultXMLDialect
         defineParagraphTags(new String[]
         {
             // Word
-            "w:p",                                                              // NOI18N
-            "w:tab",                                                            // NOI18N
-            "w:br",                                                             // NOI18N
+            "w:p",                                                              
+            "w:tab",                                                            
+            "w:br",                                                             
             // Excel
-            "si",                                                               // NOI18N
+            "si",                                                               
             // PowerPoint
-            "a:p",                                                              // NOI18N
+            "a:p",                                                              
         });
         
         if (options.getTranslateHiddenText()) // Word
-            defineOutOfTurnTag("w:instrText");                                  // NOI18N
+            defineOutOfTurnTag("w:instrText");                                  
         else
-            defineIntactTag("w:instrText");                                     // NOI18N
+            defineIntactTag("w:instrText");                                     
         
         defineIntactTags(new String[]
         {
             // Excel
-            "authors",                                                          // NOI18N
+            "authors",                                                          
             // PowerPoint
-            "p:attrName",                                                       // NOI18N
+            "p:attrName",
+            // Word
+            "wp:align",
+            "w:drawing",
         });        
     }
 }

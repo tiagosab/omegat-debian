@@ -4,9 +4,9 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-           (C) 2007 Didier Briel
+           (C) 2007-2009 Didier Briel
  
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -26,11 +26,9 @@
 
 package org.omegat.filters3.xml.xliff;
 
-import java.util.regex.Pattern;
-
-import org.xml.sax.InputSource;
-
 import org.omegat.filters3.xml.DefaultXMLDialect;
+import org.omegat.filters3.Attributes;
+import org.omegat.filters3.Attribute;
 
 /**
  * This class specifies XLIFF XML Dialect.
@@ -61,12 +59,39 @@ public class XLIFFDialect extends DefaultXMLDialect
             "count-group",                                                      // NOI18N
             "alt-trans",                                                        // NOI18N
             "note",                                                             // NOI18N
-            "mrk",                                                              // NOI18N
+//            "mrk", only <mrk mtype="protected"> should be an intact tag       // NOI18N
             "ph",                                                               // NOI18N
             "bpt",                                                              // NOI18N
             "ept",                                                              // NOI18N
             "it",                                                               // NOI18N
             "context",                                                          // NOI18N
+            "seg-source",                                                       // NOI18N
         });
+
     }
+
+    /**
+     * In the XLIFF filter, the tag &lt;mrk&gt; is a
+     * preformat tag when the attribute "mtype" contains "seg".
+     * @param tag An XML tag
+     * @param atts The attributes associated with the tag
+     * @return <code>true</code> if this tag should be a preformat tag,
+      * <code>false</code> otherwise
+     */
+    public Boolean validatePreformatTag(String tag,
+                                        Attributes atts) {
+        if (!tag.equalsIgnoreCase("mrk")) // We test only "mrk"
+            return false;
+
+        if (atts != null) {
+            for (int i=0; i < atts.size(); i++) {
+               Attribute oneAttribute = atts.get(i);
+               if (oneAttribute.getName().equalsIgnoreCase("mtype") &&
+                   oneAttribute.getValue().equalsIgnoreCase("seg"))
+                   return true;
+            }
+        }
+        return false;
+    }
+
 }

@@ -4,7 +4,8 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               2008-2009 Alex Buloichik
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -26,13 +27,13 @@ package org.omegat.gui.dialogs;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.Label;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
+
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Box;
@@ -50,10 +51,10 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 
-import org.omegat.core.ProjectProperties;
+import org.omegat.core.Core;
+import org.omegat.core.data.ProjectProperties;
 import org.omegat.gui.segmentation.SegmentationCustomizer;
 import org.omegat.util.Language;
-import org.omegat.util.OConsts;
 import org.omegat.util.OStrings;
 import org.omegat.util.Preferences;
 import org.omegat.util.gui.LanguageComboBoxRenderer;
@@ -74,6 +75,7 @@ import org.openide.awt.Mnemonics;
  * @author Keith Godfrey
  * @author Maxym Mykhalchuk
  * @author Henry Pijffers (henry.pijffers@saxnot.com)
+ * @author Alex Buloichik (alex73mail@gmail.com)
  */
 public class ProjectPropertiesDialog extends JDialog
 {
@@ -106,27 +108,12 @@ public class ProjectPropertiesDialog extends JDialog
      *                          {@link #RESOLVE_DIRS} or {@link #EDIT_PROJECT}).
      */
     public ProjectPropertiesDialog(
-            Frame parentFrame,
             ProjectProperties projectProperties, 
             String projFileName, int dialogTypeValue)
     {
-        super(parentFrame, true);
+        super(Core.getMainWindow().getApplicationFrame(), true);
         this.projectProperties = projectProperties;
         this.dialogType = dialogTypeValue;
-
-        if (projFileName == null)
-            projectProperties.reset();
-
-        if (projFileName == null)
-        {
-            String sourceLocale = Preferences.getPreference(Preferences.SOURCE_LOCALE);
-            if( !sourceLocale.equals(""))                                                   // NOI18N
-                projectProperties.setSourceLanguage(sourceLocale);
-            
-            String targetLocale = Preferences.getPreference(Preferences.TARGET_LOCALE);
-            if( !targetLocale.equals("") )                                                // NOI18N
-                projectProperties.setTargetLanguage(targetLocale);
-        }
 
         Border emptyBorder = new EmptyBorder(2,0,2,0);
         Box centerBox = Box.createVerticalBox();
@@ -136,7 +123,7 @@ public class ProjectPropertiesDialog extends JDialog
         JTextArea m_messageArea = new JTextArea();
         m_messageArea.setEditable(false);
         m_messageArea.setBackground(
-                javax.swing.UIManager.getDefaults().getColor("Label.background")); // NOI18N
+                javax.swing.UIManager.getDefaults().getColor("Label.background")); 
         m_messageArea.setFont(new Label().getFont());
         Box bMes = Box.createHorizontalBox();
         bMes.setBorder(emptyBorder);
@@ -240,6 +227,19 @@ public class ProjectPropertiesDialog extends JDialog
         dirsBox.add(bGlos);
         dirsBox.add(m_glosRootField);
 
+        JLabel m_locDictLabel = new JLabel();
+        Mnemonics.setLocalizedText(m_locDictLabel, OStrings.getString("PP_DICT_ROOT"));
+        Box bDict = Box.createHorizontalBox();
+        bDict.setBorder(emptyBorder);
+        bDict.add(m_locDictLabel);
+        bDict.add(Box.createHorizontalGlue());
+        JButton m_dictBrowse = new JButton();
+        Mnemonics.setLocalizedText(m_dictBrowse, OStrings.getString("PP_BUTTON_BROWSE_DICT"));
+        bDict.add(m_dictBrowse);
+        final JTextField m_dictRootField = new JTextField();
+        dirsBox.add(bDict);
+        dirsBox.add(m_dictRootField);
+
         JLabel m_locRootLabel = new JLabel();
         Mnemonics.setLocalizedText(m_locRootLabel, OStrings.getString("PP_LOC_ROOT"));
         Box bLoc = Box.createHorizontalBox();
@@ -255,7 +255,7 @@ public class ProjectPropertiesDialog extends JDialog
 
         centerBox.add(dirsBox);
         
-        getContentPane().add(centerBox, "Center");                                      // NOI18N
+        getContentPane().add(centerBox, "Center");                                      
 
         JButton m_okButton = new JButton();
         Mnemonics.setLocalizedText(m_okButton, OStrings.getString("BUTTON_OK"));
@@ -268,7 +268,7 @@ public class ProjectPropertiesDialog extends JDialog
         southBox.add(m_okButton);
         southBox.add(Box.createHorizontalStrut(5));
         southBox.add(m_cancelButton);
-        getContentPane().add(southBox, "South");                                        // NOI18N
+        getContentPane().add(southBox, "South");                                        
         
         setResizable(false);
         
@@ -276,9 +276,10 @@ public class ProjectPropertiesDialog extends JDialog
         {
             public void actionPerformed(ActionEvent e)
             {
-                doOK(m_sourceLocaleField, m_targetLocaleField, 
-                        m_sentenceSegmentingCheckBox, 
-                        m_srcRootField, m_locRootField, m_glosRootField, m_tmRootField);
+                doOK(m_sourceLocaleField, m_targetLocaleField,
+                        m_sentenceSegmentingCheckBox, m_srcRootField,
+                        m_locRootField, m_glosRootField, m_tmRootField,
+                        m_dictRootField);
             }
         });
 
@@ -322,6 +323,14 @@ public class ProjectPropertiesDialog extends JDialog
             }
         });
         
+        m_dictBrowse.addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent e)
+            {
+                doBrowseDirectoy(5, m_dictRootField);
+            }
+        });
+        
         final JDialog self = this;
         m_sentenceSegmentingButton.addActionListener(new ActionListener()
         {
@@ -342,73 +351,14 @@ public class ProjectPropertiesDialog extends JDialog
             }
         };
         getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).
-        put(escape, "ESCAPE");                                                  // NOI18N
-        getRootPane().getActionMap().put("ESCAPE", escapeAction);               // NOI18N
-
-        // if no project file specified, ask user to create one
-        if (projFileName == null)
-        {
-            // have user select the project name and where they
-            //  want to put it.  use that information to derive the
-            //  location for project, source and loc directories
-            // open save dialog
-            NewProjectFileChooser ndc = new NewProjectFileChooser();
-            String label;
-            label = OStrings.getString("PP_SAVE_PROJECT_FILE");
-            ndc.setDialogTitle(label);
-
-            String curDir = Preferences.getPreference(Preferences.CURRENT_FOLDER);
-            if (curDir != null)
-            {
-                File dir = new File(curDir);
-                if (dir.exists() && dir.isDirectory())
-                {
-                    ndc.setCurrentDirectory(dir);
-                }
-            }
-
-            int val = ndc.showSaveDialog(this);
-            if (val != OmegaTFileChooser.APPROVE_OPTION)
-            {
-                m_dialogCancelled = true;
-                return;
-            }
-
-            // create project dir (and higher dirs) if it doesn't exist yet
-            // fix for bug 1476591 (wrong folders are used if project dir doesn't exist)
-            File projectDir = ndc.getSelectedFile();
-            if (!projectDir.exists())
-                projectDir.mkdirs();
-
-            // set project and relative dirs
-            projectProperties.setProjectRoot(ndc.getSelectedFile().getAbsolutePath()
-                        + File.separator);
-            projectProperties.setProjectFile(projectProperties.getProjectRoot() + OConsts.FILE_PROJECT);
-            Preferences.setPreference(Preferences.CURRENT_FOLDER, ndc.getSelectedFile().getParent());
-            projectProperties.setProjectName(projectProperties.getProjectFile().substring(projectProperties.getProjectRoot().length()));
-            projectProperties.setSourceRoot(projectProperties.getProjectRoot() + OConsts.DEFAULT_SOURCE
-                + File.separator);
-            projectProperties.setTargetRoot(projectProperties.getProjectRoot() + OConsts.DEFAULT_TARGET
-                + File.separator);
-            projectProperties.setGlossaryRoot(projectProperties.getProjectRoot() + OConsts.DEFAULT_GLOSSARY
-                + File.separator);
-            projectProperties.setTMRoot(projectProperties.getProjectRoot() + OConsts.DEFAULT_TM
-                + File.separator);
-        }
-        else
-        {
-            projectProperties.setProjectFile(projFileName);
-            projectProperties.setProjectRoot(projectProperties.getProjectFile().substring(0,
-                            projectProperties.getProjectFile().lastIndexOf(File.separator)+1));
-        }
-
-        projectProperties.setProjectInternal(projectProperties.getProjectRoot() + OConsts.DEFAULT_INTERNAL
-                + File.separator);
+        put(escape, "ESCAPE");                                                  
+        getRootPane().getActionMap().put("ESCAPE", escapeAction);               
 
         m_srcRootField.setText(projectProperties.getSourceRoot());
         m_locRootField.setText(projectProperties.getTargetRoot());
         m_glosRootField.setText(projectProperties.getGlossaryRoot());
         m_tmRootField.setText(projectProperties.getTMRoot());
+        m_dictRootField.setText(projectProperties.getDictRoot());
         m_sourceLocaleField.setSelectedItem(projectProperties.getSourceLanguage());
         m_targetLocaleField.setSelectedItem(projectProperties.getTargetLanguage());
         m_sentenceSegmentingCheckBox.setSelected(projectProperties.isSentenceSegmentingEnabled());
@@ -459,7 +409,7 @@ public class ProjectPropertiesDialog extends JDialog
      */
     private void doBrowseDirectoy(int browseTarget, JTextField field)
     {
-        String title;                                                       // NOI18N
+        String title;                                                       
         switch (browseTarget)
         {
             case 1:
@@ -478,6 +428,10 @@ public class ProjectPropertiesDialog extends JDialog
                 title = OStrings.getString("PP_BROWSE_TITLE_TM");
                 break;
 
+            case 5:
+                title = OStrings.getString("PP_BROWSE_TITLE_DICT");
+                break;
+
             default:
                 return;
         }
@@ -489,7 +443,7 @@ public class ProjectPropertiesDialog extends JDialog
         browser.setFileSelectionMode(OmegaTFileChooser.DIRECTORIES_ONLY);
 
         // check if the current directory as specified by the field exists
-        String curDir = (field != null) ? field.getText() : ""; // NOI18N
+        String curDir = (field != null) ? field.getText() : ""; 
         File curDirCheck = new File(curDir);
 
         // if the dir doesn't exist, use project dir and check if that exists
@@ -517,13 +471,18 @@ public class ProjectPropertiesDialog extends JDialog
                 case 4:
                     curDir = Preferences.getPreference(Preferences.TM_FOLDER);
                     break;
+
+                case 5:
+                    curDir = Preferences.getPreference(Preferences.DICT_FOLDER);
+                    break;
+
             }
         }
 
-        if (curDir.equals(""))                                                  // NOI18N
+        if (curDir.equals(""))                                                  
             curDir = Preferences.getPreference(Preferences.CURRENT_FOLDER);
 
-        if (!curDir.equals(""))                                         // NOI18N
+        if (!curDir.equals(""))                                         
         {
             File dir = new File(curDir);
             if (dir.exists() && dir.isDirectory())
@@ -588,6 +547,16 @@ public class ProjectPropertiesDialog extends JDialog
                     field.setForeground(java.awt.SystemColor.textText);
                 break;
 
+            case 5:
+                Preferences.setPreference(Preferences.DICT_FOLDER,
+                        browser.getSelectedFile().getParent());
+                projectProperties.setDictRoot(str);
+                field.setText(projectProperties.getDictRoot());
+                if( new File(projectProperties.getDictRoot()).exists() &&
+                        new File(projectProperties.getDictRoot()).isDirectory() )
+                    field.setForeground(java.awt.SystemColor.textText);
+                break;
+                
         }
     }
 
@@ -598,7 +567,8 @@ public class ProjectPropertiesDialog extends JDialog
             JTextField m_srcRootField,
             JTextField m_locRootField,
             JTextField m_glosRootField,
-            JTextField m_tmRootField
+            JTextField m_tmRootField,
+            JTextField m_dictRootField
             )
     {
         if( !ProjectProperties.verifySingleLangCode(m_sourceLocaleField.getSelectedItem().toString()) )
@@ -684,6 +654,20 @@ public class ProjectPropertiesDialog extends JDialog
             return;
         }
 
+        projectProperties.setDictRoot(m_dictRootField.getText());
+        if (!projectProperties.getDictRoot().endsWith(File.separator))
+            projectProperties.setDictRoot(projectProperties.getDictRoot() + File.separator);
+        if( dialogType!=NEW_PROJECT && 
+                !new File(projectProperties.getDictRoot()).exists() )
+        {
+            JOptionPane.showMessageDialog(this, 
+                    OStrings.getString("NP_DICTDIR_DOESNT_EXIST"),
+                    OStrings.getString("TF_ERROR"),
+                    JOptionPane.ERROR_MESSAGE);
+            m_dictRootField.requestFocusInWindow();
+            return;
+        }
+
         m_dialogCancelled = false;
         setVisible(false);
     }
@@ -723,6 +707,12 @@ public class ProjectPropertiesDialog extends JDialog
     /**
      * Whether the user cancelled the dialog.
      */
-    public boolean dialogCancelled()    { return m_dialogCancelled; }
     private boolean     m_dialogCancelled;
+
+    /**
+     * Return new properties or null if dialog cancelled.
+     */
+    public ProjectProperties getResult() {
+        return m_dialogCancelled ? null : projectProperties;
+    }
 }

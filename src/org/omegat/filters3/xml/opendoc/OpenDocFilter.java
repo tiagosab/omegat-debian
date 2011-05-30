@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -53,7 +54,7 @@ import org.omegat.util.Log;
  */
 public class OpenDocFilter extends AbstractFilter
 {
-    private static final HashSet TRANSLATABLE = new HashSet(
+    private static final Set<String> TRANSLATABLE = new HashSet<String>(
             Arrays.asList(new String[] 
     { 
         "content.xml",                                                          // NOI18N
@@ -72,10 +73,10 @@ public class OpenDocFilter extends AbstractFilter
         try
         {
             ZipFile file = new ZipFile(inFile);
-            Enumeration entries = file.entries();
+            Enumeration<? extends ZipEntry> entries = file.entries();
             while (entries.hasMoreElements())
             {
-                ZipEntry entry = (ZipEntry) entries.nextElement();
+                ZipEntry entry = entries.nextElement();
                 if (TRANSLATABLE.contains(entry.getName()))
                     return true;
             }
@@ -86,8 +87,10 @@ public class OpenDocFilter extends AbstractFilter
     OpenDocXMLFilter xmlfilter = null;
     private OpenDocXMLFilter getXMLFilter()
     {
-        if (xmlfilter==null)
+        if (xmlfilter==null) {
             xmlfilter = new OpenDocXMLFilter();
+        }
+        xmlfilter.setParseCallback(entryProcessingCallback);
         // Defining the actual dialect, because at this step 
         // we have the options
         OpenDocDialect dialect = (OpenDocDialect) xmlfilter.getDialect();
@@ -107,16 +110,16 @@ public class OpenDocFilter extends AbstractFilter
      * which is actually a ZIP file consisting of many XML files, 
      * some of which should be translated.
      */
-    public List processFile(File inFile, String inEncoding, File outFile, String outEncoding) throws IOException, TranslationException
+    public List<File> processFile(File inFile, String inEncoding, File outFile, String outEncoding) throws IOException, TranslationException
     {
         ZipFile zipfile = new ZipFile(inFile);
         ZipOutputStream zipout = null;
         if (outFile!=null)
             zipout = new ZipOutputStream(new FileOutputStream(outFile));
-        Enumeration zipcontents = zipfile.entries();
+        Enumeration<? extends ZipEntry> zipcontents = zipfile.entries();
         while (zipcontents.hasMoreElements())
         {
-            ZipEntry zipentry = (ZipEntry) zipcontents.nextElement();
+            ZipEntry zipentry = zipcontents.nextElement();
             String shortname = zipentry.getName();
             if (shortname.lastIndexOf('/')>=0)
                 shortname = shortname.substring(shortname.lastIndexOf('/')+1);

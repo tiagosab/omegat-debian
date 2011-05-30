@@ -2,7 +2,7 @@
 <head>
   <link rel="stylesheet" href="./OmegaT.css" type="text/css">
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
-  <title>File Filters - OmegaT 1.8 User Manual</title>
+  <title>File Filters - OmegaT 2.0 User Manual</title>
 </head>
 
 <body>
@@ -126,13 +126,13 @@
   <ul>
     <li><i>Index entries</i></li>
 
-    <li>Bookmarks</li>
+    <li><i>Bookmarks</i></li>
 
-    <li>Bookmark references</li>
+    <li><i>Bookmark references</i></li>
 
-    <li>Notes</li>
+    <li><i>Notes</i></li>
 
-    <li>Comments</li>
+    <li><i>Comments</i></li>
   </ul>
 
   <h4>Microsoft Open XML files</h4>
@@ -154,6 +154,8 @@
     <li><i>Footer (Word)</i></li>
 
     <li><i>Slide comments (PowerPoint)</i></li>
+
+    <li><i>Slide masters (PowerPoint)</i></li>
   </ul>
 
   <h3><a name="edit_dialog" id="edit_dialog"></a>Edit filter dialog</h3>
@@ -171,7 +173,7 @@
   <h3><a name="source_file_name" id="source_file_name"></a>Source file type,
   filename pattern</h3>
 
-  <p>When an OmegaT encounters a file in its source directory, it tries to
+  <p>When an OmegaT encounters a file in its source folder, it tries to
   select the filter using file's extension. More precisely, OmegaT tries to
   match each filter's source filename patterns against the filename. For
   example, <code>*.xhtml</code> pattern will match against any file with
@@ -203,12 +205,12 @@
 
   <ul>
     <li>
-      <p style="margin-bottom: 0cm">OmegaT finds the source file encoding by
+      <p style="margin-bottom: 0cm;">OmegaT finds the source file encoding by
       using its encoding declaration if any (HTML files, XML based files).</p>
     </li>
 
     <li>
-      <p style="margin-bottom: 0cm">OmegaT is set to use a mandatory encoding
+      <p style="margin-bottom: 0cm;">OmegaT is set to use a mandatory encoding
       for some file formats ( Java properties etc)</p>
     </li>
 
@@ -266,7 +268,7 @@
   </ul>
   <hr>
 
-  <table style="width: 100%;" border="0" cellpadding="2" cellspacing="2">
+  <table style="width: 100%;" border="0" cellpadding="2" cellspacing="2" summary="just formatting">
     <tbody>
       <tr>
         <td style="text-align: left;"><a href="legalNotices.html">Legal

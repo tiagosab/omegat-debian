@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2007 - Zoltan Bartko - bartkozoltan@bartkozoltan.com
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -71,5 +71,8 @@ public final class Platform {
     public static final boolean isX11() {
         // TODO: check FS or do some other X11-specific test
         return !Platform.isWindows() && !Platform.isMac();
+    }
+    public static final boolean isWebStart() {
+        return System.getProperty("javawebstart.version") != null;
     }
 }

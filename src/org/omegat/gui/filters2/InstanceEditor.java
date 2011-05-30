@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -319,7 +319,7 @@ public class InstanceEditor extends JDialog
         gridBagConstraints.insets = new java.awt.Insets(3, 3, 3, 3);
         getContentPane().add(jLabel3, gridBagConstraints);
 
-        sourceEncodingField.setModel(new DefaultComboBoxModel(new Vector(FilterMaster.getSupportedEncodings())));
+        sourceEncodingField.setModel(new DefaultComboBoxModel(new Vector<String>(FilterMaster.getSupportedEncodings())));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 2;
@@ -336,7 +336,7 @@ public class InstanceEditor extends JDialog
         gridBagConstraints.insets = new java.awt.Insets(3, 3, 3, 3);
         getContentPane().add(jLabel6, gridBagConstraints);
 
-        targetEncodingField.setModel(new DefaultComboBoxModel(new Vector(FilterMaster.getSupportedEncodings())));
+        targetEncodingField.setModel(new DefaultComboBoxModel(new Vector<String>(FilterMaster.getSupportedEncodings())));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 3;

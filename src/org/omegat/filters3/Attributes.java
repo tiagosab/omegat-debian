@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -25,6 +25,7 @@
 package org.omegat.filters3;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A list of Tag's attritutes.
@@ -33,7 +34,7 @@ import java.util.ArrayList;
  */
 public class Attributes
 {
-    ArrayList list = new ArrayList();
+    List<Attribute> list = new ArrayList<Attribute>();
     
     /** Number of attributes. */
     public int size()
@@ -50,7 +51,7 @@ public class Attributes
     /** Gets one of the attributes from the list. */
     public Attribute get(int index)
     {
-        return (Attribute)list.get(index);
+        return list.get(index);
     }
 
     /**
@@ -60,10 +61,10 @@ public class Attributes
     public String toString()
     {
         StringBuffer buf = new StringBuffer();
-        for (int i=0; i<list.size(); i++)
+        for (Attribute attr : list)
         {
             buf.append(' ');
-            buf.append(((Attribute)list.get(i)).toString());
+            buf.append(attr.toString());
         }
         return buf.toString();
     }

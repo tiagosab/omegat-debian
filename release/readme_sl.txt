@@ -1,8 +1,8 @@
-Ta prevod je opravil Vito Smolej, Copyright 2008
+ Ta prevod je opravil Vito Smolej, Copyright © 2009.
 
 
 ==============================================================================
-   BeriMe datoteka OmegaT 1.8.1
+  OmegaT 2.0, Read Me file
 
   1.  Informacija o OmegaT
   2.  Kaj je OmegaT?
@@ -77,31 +77,29 @@ Da OmegaT lahko deluje, mora na vašem sistemu biti nameščeno okolje za Javo, 
 Uporabniki Windows in Linux: če ste prepričani, da se na vašem sistemu ustrezni JRE že nahaja, lahko naložite OmegaT brez JRE (instalacijo prepoznate po imenu, ki vsebuje oznako "Without_JRE"). 
 V kolikor niste čisto prepričani, vam priporočamo uporabo verzije "standard" . t.j. vključno z JRE. Tako ste na varnem tudi v primeru. če se na vašem računalniku JRE že nahaja, saj se verziji med seboj ne bosta motili.
 
-Uporabniki Linuxa: vedite, da OmegaT ne bo delala s prostimi ali open-source implementacijami Jave, ki jih je najti v številnih distribucijah Linuxa (kot je na primer Ubuntu), ker so ali zastarele ali nepopolne.  Naložite z naslova zgoraj Java Runtime Environment (JRE) podjetja Sun in jo namestite, ali pa naložite in namestite verzijo OmegaT, ki vsebuje JRE (.tar.gz datoteka z oznako "Linux").
+Uporabniki Linux: vedite, da OmegaT ne bo delala s prostimi ali odprtokodnimi implementacijami Jave, ki jih je najti v številnih distribucijah Linuxa (kot je na primer Ubuntu), ker so ali zastarele ali nepopolne.  Naložite z naslova zgoraj Java Runtime Environment (JRE) podjetja Sun in jo namestite, ali pa naložite in namestite verzijo OmegaT, ki vsebuje JRE (.tar.gz datoteka z oznako "Linux").
 
-Uporabniki Mac: na MacOSX je Java že nameščena.
+Uporabniki Mac: na Mac OS X je Java že nameščena.
 
-Uporabnik Linuxa na sistemih PowerPC: priskrbeti si morate JRE podjetja IBM, ker SUN Jave za PPC sisteme ne podpira. Prenesete ga lahko z naslova:
+Linux na sistemih PowerPC: priskrbeti si morate JRE podjetja IBM, ker SUN Jave za PPC sisteme ne podpira. Prenesete ga lahko z naslova:
     http://www-128.ibm.com/developerworks/java/jdk/linux/download.html 
 
-3.2 Namestitev
-* uporabniki Windows: poženite namestitveni program. Če želite, vam namestitveni program tudi pripravi bližnjice za OmegaT.
-* ostali:
-najprej si pripravite primeren imenik za OmegaT 
-(npr. /usr/local/lib v Linuxu). Prekopirajte arhiv OmegaT zip ali tar.gz 
-'v ta podimenik in ga tu razpakirajte. 
+32. Namestitev
+* uporabniki Windows: poženite enostavno namestitveni program. Če želite, vam namestitveni program tudi pripravi bližnjice za OmegaT.
+* drugi: za namestitev OmegaT si morate samo ustvariti ustrezno mapo za OmegaT (npr. /usr/local/lib v Linuxu). Prekopirajte arhiv OmegaT zip ali tar.gz 
+v to mapo in ga tu razpakirajte. 
 
 3.3 Zagon OmegaT
 OmegaT lahko zaženete na celo vrsto načinov.
 
-* uporabniki Windows: dvokliknite na datoteko OmegaT.exe. Če v eksplorerju vidite OmegaT, datoteke OmegaT.exe pa ne, popravite nastavitve tako, da bo videti pripone datotek.  
+* uporabniki Windows: by double-clicking on the file OmegaT.exe. Če v eksplorerju vidite OmegaT, datoteke OmegaT.exe pa ne, popravite nastavitve tako, da bo videti pripone datotek.  
 
 * dvokliknite na datoteko OmegaT.jar. 
 To bo šlo samo v primeru, če je na vašem sistemu pripona .jar povezana z Javo.
 
 * Z ukazno vrstico. Ukaz, s katerim se požene OmegaT, je:
 
-cd <imenik, v katerem se nahaja datoteka OmegaT.jar>
+cd <mapa, v kateri se nahaja datoteka OmegaT.jar>
 
 <pot in ime programa za izvajanje Jave> -jar OmegaT.jar
 
@@ -119,14 +117,13 @@ Ko ste izbrali ustrezen podmeni, mu dodajte podmeni / element z datoteka - nov p
 
 V polju "Ukaz" poiščite z gumbom za navigacijo vaš skript za zagon OmegaT in ga izberite. 
 
-Kliknite na ikono (desno od polj za ime/opis>/komentar) - druge ikone - brskaj, in zakrmarite do podimenika /images v imeniku za aplikacijo OmegaT. Izberite ikono OmegaT.png.
+Kliknite na ikono (desno od polj za ime/opis/komentar) - druge ikone - brskaj, in zakrmarite do podimenika /images v mapi za aplikacijo OmegaT. Izberite ikono OmegaT.png.
 
 Shranite spremembe z datoteka - shrani.
 
 * uporabniki Linux GNOME: OmegaT lahko svojemu panoju (vrstici vrh zaslona) dodate kot sledi:
 
-Desnokliknite na pano - dodaj nov zagon. 
-V polje "ime" vtipkajte OmegaT; za polje "ukaz" poiščite z gumbom za navigacijo vaš skript za zagon OmegaT . Izberite ga. in kliknite V redu.
+Desnokliknite na pano - dodaj nov zagon. Vnesite "OmegaT" v polje za ime; V polju "Ukaz" poiščite z gumbom za navigacijo svoj skript za zagon OmegaT. Izberite ga. in kliknite V redu.
 
 
 ==============================================================================
@@ -150,7 +147,8 @@ Za druge vrste sodelovanja se najprej prijavite v uporabniško skupino::
   OmegaT je prvotno delo Keitha Godfreya.
   Marc Prior je koordinator projekta OmegaT.
 
-Doslej so k projektu prispevali (v abecednem vrstnem redu):)
+Doslej so k projektu prispevali:
+(v abecednem vrstnem redu):)
 
 Kodo so prispevali
   Zoltan Bartko
@@ -159,9 +157,11 @@ Kodo so prispevali
   Alex Buloichik
   Sandra Jean Chua
   Martin Fleurke  
+  Wildrich Fourie
   Thomas Huriaux
   Fabián Mandelbaum
   Maxym Mykhalchuk 
+  Arno Peters
   Henry Pijffers 
   Tiago Saboga
   Andrzej Sawula
@@ -172,7 +172,7 @@ Na druge načine so prispevali tudi
   Sabine Cretella
   Dmitri Gabinski
   Jean-Christophe Helary
-  Vito Smolej (odgovorni za dokumentacijo)
+  Vito Smolej (odgovoren za dokumentacijo)
   Samuel Murray
   Marc Prior (odgovoren za lokalizacijo)
   in še mnogo, mnogo drugih, zelo koristnih ljudi
@@ -190,23 +190,21 @@ OmegaT uporablja naslednje knjižnice:
   VLDocking Framework 2.1.4 - VLSolutions (CeCILL licenca).
   http://www.vlsolutions.com/en/products/docking/
 
-  Hunspell 1.1.12 László Németh in drugi (LGPL License)
+  Hunspell László Németh in drugi (LGPL License)
 
   JNA - avtor Todd Fast, Timothy Wall in drugi (LGPL licenca)
 
   Swing-Layout 1.0.2 (LGPL licenca)
 
-  Backport-util-concurrent (Public Domain)
-
-  Swing-Layout 1.0.2 (LGPL licenca)
-
   Jmyspell 2.1.4 (LGPL licenca)
+
+  JAXB 2.1.7 (GPLv2 + classpath exception)
 
 
 ==============================================================================
  5.  Vas OmegaT spravlja ob živce?  Potrebujete pomoč?
 
-Preden pošljete sporočilo o napaki, se prepričajte, da ste temeljito preverili dokumentacijo.  Lahko da boste tako odkrili kako lastnost OmegaT, ki vam je bila doslej skrita. Če pri pregledu log datoteke OmegaT log naletite na besede,kot so "Error", "Warning", "Exception", ali pa "died unexpectedly", potem ste lahko da naleteli na kaj resnega (datoteka log.txt se nahaja v imeniku z uporabnikovimi nastavitvami, poglejte v priročnik za natančnejšo lokacijo.
+Preden pošljete sporočilo o napaki, se prepričajte, da ste temeljito preverili dokumentacijo.  Lahko da boste tako odkrili kako lastnost OmegaT, ki vam je bila doslej skrita. Če pri pregledu log datoteke OmegaT log naletite na besede,kot so "Error", "Warning", "Exception", ali pa "died unexpectedly", potem ste lahko da naleteli na kaj resnega (datoteka log.txt se nahaja v mapi z uporabnikovimi nastavitvami, poglejte v priročnik za natančnejšo lokacijo.
 
 
 Kot naslednje lahko preverite odkrito nepravilnost z drugimi uporabniki in se prepričate, da napake še ni bila javljena. Ogledate si lahko tudi stran s poročili o napakah na SourceForge. Sporočilo o napaki pošljite samo, če ste prepričani, da ste kot prvi odkrili ponovljivo zaporedje korakov, ki vodijo do nezaželenih oziroma nepričakovanih posledic.
@@ -233,7 +231,5 @@ Včlanite se v Source Forge, da boste lahko zasledovali, kaj se z vašim poroči
 6.   Podatki o izdajah
 
 Podrobne podatke o spremembah v tej in v prejšnjih izdajah najdete v datoteki 'changes.txt'.
-
-
 
 ==============================================================================

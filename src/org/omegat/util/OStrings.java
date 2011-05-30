@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -46,6 +46,13 @@ public class OStrings
     /** Resource bundle that contains all the strings */
     private static ResourceBundle bundle = ResourceBundle.getBundle("org/omegat/Bundle");
 
+    /**
+     * Returns resource bundle.
+     */
+    public static ResourceBundle getResourceBundle() {
+        return bundle;
+    }
+    
     /**
       * Loads resources from the specified file.
       * If the file cannot be loaded, resources are reverted to the default locale.

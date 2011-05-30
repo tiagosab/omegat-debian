@@ -5,7 +5,7 @@
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
  Portions copyright 2007 - Zoltan Bartko - bartkozoltan@bartkozoltan.com
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -73,7 +73,18 @@ public class Token
      */
     public Token(String _text, int _offset)
     {
-        length = _text.length();
+        this(_text, _offset, _text.length());
+    }
+
+    /**
+     * Creates a new token.
+     * @param _text the text of the token
+     * @param _offset the starting position of this token in parent string
+     * @param _length length of token
+     */
+    public Token(String _text, int _offset, int _length)
+    {
+        length = _length;
         hash = (_text == null) ? -1 : stripAmpersand(_text).hashCode();
         offset = _offset;
     }

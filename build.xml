@@ -85,7 +85,11 @@
         </copy>
         <copy todir="${l10n.min.dir}/source">
             <fileset dir="." 
-                    includes="docs/en/instantStartGuideNoTOC.html src/**/Bundle.properties"/>
+                    includes="docs/en/instantStartGuideNoTOC.html 
+                    docs/en/images/NewProject.png
+                    docs/en/images/tagged_segment.png
+                    docs/en/images/tagged_segment_target.png
+                    src/**/Bundle.properties"/>
         </copy>
         <copy file="release/readme.txt"
               tofile="${l10n.min.dir}/source/readme.utf8"
@@ -138,15 +142,15 @@
     <target name="src" depends="init" description="Build source distribution">
         <mkdir dir="dist2"/>
         <zip destfile="dist2/OmegaT_${distversion}_Source.zip" basedir="." 
-                includes="addons/** docs/** images/** lib/** nbproject/** lib-mnemonics/** release/** src/** test/** manifest-template.mf build.xml native/**"
+                includes="addons/** docs/** images/** lib/** nbproject/** lib-mnemonics/** release/** src/** test/** gen/** manifest-template.mf build.xml native/**"
                 excludes="**/nbproject/private/** **/build/** **/dist/**" />
     </target>
 
     <!-- Copies all files to dist -->
-    <target name="release">
+    <target name="release" depends="docindexgen">
         <mkdir dir="dist"/>
         <copy todir="dist">
-            <fileset dir="release" includes="*" excludes="readme.txt win32-specific l10n-project"/>
+            <fileset dir="release" includes="*" excludes="readme.txt *-specific l10n-project"/>
         </copy>
         <copy todir="dist"
               file="release/readme.txt">
@@ -185,7 +189,7 @@
         </zip>
     </target>
 
-    <!-- Builds a Linux (tar, gz) distribution -->    
+    <!-- Builds a Linux (tar, bz2) distribution -->    
    <target name="linux" description="Build Linux distro" depends="jar,release, check-jre-linux" if="jre-linux.exists">
         <mkdir dir="dist2"/>
         <mkdir dir="dist2/linux"/>
@@ -200,7 +204,7 @@
             <tarfileset dir="dist2/linux" excludes="OmegaT/OmegaT OmegaT/jre/bin/java"/>           
             <tarfileset dir="dist2/linux" includes="OmegaT/OmegaT OmegaT/jre/bin/java" filemode="755"/>
         </tar>
-        <gzip zipfile="dist2/OmegaT_${distversion}_Linux.tar.gz" src="dist2/OmegaT_${distversion}_Linux.tar"/>
+        <bzip2 zipfile="dist2/OmegaT_${distversion}_Linux.tar.bz2" src="dist2/OmegaT_${distversion}_Linux.tar"/>
    </target>
 
     <!-- Creates a Windows Installer -->
@@ -208,6 +212,7 @@
         <copy todir="dist" file="release/win32-specific/OmegaT.exe"/>
         <copy todir="dist" file="release/win32-specific/OmegaT.l4J.ini"/>
  
+        <delete file="dist/OmegaT.iss"/>
         <filter token="VERSION_NUMBER_SUBST" value="${distversion}"/>
         <copy todir="dist" file="release/win32-specific/OmegaT.iss" filtering="on"/>
         
@@ -222,6 +227,7 @@
         <copy todir="dist" file="release/win32-specific/OmegaT.exe"/>
         <copy todir="dist" file="release/win32-specific/OmegaT.l4J.ini"/>
         
+        <delete file="dist/OmegaT-JRE.iss"/>
         <filter token="VERSION_NUMBER_SUBST" value="${distversion}"/>
         <copy todir="dist" file="release/win32-specific/OmegaT-JRE.iss" filtering="on"/>
         <exec executable="${iscc.exe}">
@@ -252,6 +258,11 @@
         <ant target="do-win-jre" />
     </target>
     
+    <!-- Creates WebStart package -->
+    <target name="webstart" depends="init,jar">
+        <ant dir="release/WebStart-specific" antfile="build.xml"/>
+    </target>
+
     <!-- Builds and copies to dist2 all addons -->
     <target name="addons">
         <ant antfile="addons/properties-import/build.xml" target="dist" inheritall="false"/>
@@ -266,4 +277,32 @@
     <!-- Builds all OmegaT products -->
     <target name="all" depends="l10n-pack,src,jar,zip,win, linux" />
 
+	<target name="gen">
+		<taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
+			<classpath>
+				<fileset dir="lib" includes="**/*.jar" />
+				<fileset dir="gen/lib" includes="**/*.jar" />
+			</classpath>
+		</taskdef>
+
+		<xjc schema="src/schemas/srx20.xsd" destdir="src" package="gen.core.segmentation" />
+	</target>
+
+	<target name="docindexgen" depends="jar">
+		<mkdir dir="build/genclasses" />
+		<javac srcdir="gen/src" destdir="build/genclasses">
+			<classpath>
+				<fileset dir="lib" includes="**/*.jar" />
+				<pathelement path="build/classes" />
+			</classpath>
+		</javac>
+
+		<java classname="util.CreateDocIndexUtil">
+			<classpath>
+				<pathelement path="build/genclasses" />
+				<pathelement path="build/classes" />
+			</classpath>
+		</java>
+	</target>
+	
 </project>

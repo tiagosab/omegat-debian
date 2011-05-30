@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -24,8 +24,6 @@
 
 package org.omegat.filters3.xml;
 
-import org.omegat.filters3.Attributes;
-import org.omegat.filters3.Tag;
 
 /**
  * A comment in XML file.

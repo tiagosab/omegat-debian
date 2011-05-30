@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -26,18 +26,14 @@ package org.omegat.core.segmentation;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.omegat.core.threads.CommandThread;
-import org.omegat.core.ProjectProperties;
 
 import org.omegat.util.Language;
 import org.omegat.util.PatternConsts;
-import org.omegat.util.Preferences;
 
 /**
  * The class that sentences the paragraphs into sentences
@@ -68,16 +64,15 @@ public final class Segmenter
      * @param brules    list to store rules that account to breaks
      * @return list of sentences (String objects)
      */
-    public static List segment(String paragraph, List spaces, List brules)
+    public static List<String> segment(Language lang, String paragraph, List<StringBuffer> spaces, List<Rule> brules)
     {
-        List segments = breakParagraph(paragraph, brules);
-        List sentences = new ArrayList(segments.size());
+        List<String> segments = breakParagraph(lang, paragraph, brules);
+        List<String> sentences = new ArrayList<String>(segments.size());
         if (spaces == null)
-            spaces = new ArrayList();
+            spaces = new ArrayList<StringBuffer>();
         spaces.clear();
-        for(int i=0; i<segments.size(); i++)
+        for(String one : segments)
         {
-            String one = (String)segments.get(i);
             int len = one.length();
             int b = 0;
             StringBuffer bs = new StringBuffer();
@@ -119,20 +114,19 @@ public final class Segmenter
      * @param paragraph the paragraph text
      * @param brules    list to store rules that account to breaks
      */
-    private static List breakParagraph(String paragraph, List brules)
+    private static List<String> breakParagraph(Language lang, String paragraph, List<Rule> brules)
     {
-        Language srclang = new Language(Preferences.getPreference(Preferences.SOURCE_LOCALE));
-        List rules = SRX.getSRX().lookupRulesForLanguage(srclang);
+        List<Rule> rules = SRX.getSRX().lookupRulesForLanguage(lang);
         if (brules == null)
-            brules = new ArrayList();
+            brules = new ArrayList<Rule>();
 
         // determining the applicable break positions
-        TreeSet dontbreakpositions = new TreeSet();
-        TreeSet breakpositions = new TreeSet();
+        Set<BreakPosition> dontbreakpositions = new TreeSet<BreakPosition>();
+        Set<BreakPosition> breakpositions = new TreeSet<BreakPosition>();
         for(int i=rules.size()-1; i>=0; i--)
         {
-            Rule rule = (Rule)rules.get(i);
-            List rulebreaks = getBreaks(paragraph, rule);
+            Rule rule = rules.get(i);
+            List<BreakPosition> rulebreaks = getBreaks(paragraph, rule);
             if( rule.isBreakRule() )
             {
                 breakpositions.addAll(rulebreaks);
@@ -147,13 +141,11 @@ public final class Segmenter
         breakpositions.removeAll(dontbreakpositions);
         
         // and now breaking the string according to the positions
-        Iterator posIterator = breakpositions.iterator();
-        List segments = new ArrayList();
+        List<String> segments = new ArrayList<String>();
         brules.clear();
         int prevpos = 0;
-        while( posIterator.hasNext() )
+        for(BreakPosition bposition : breakpositions)
         {
-            BreakPosition bposition = (BreakPosition)posIterator.next();
             String oneseg = paragraph.substring(prevpos, bposition.position);
             segments.add(oneseg);
             brules.add(bposition.reason);
@@ -169,7 +161,7 @@ public final class Segmenter
             if( oneseg.trim().length()==0
                     && segments.size()>0 )
             {
-                String prev = (String)segments.get(segments.size()-1);
+                String prev = segments.get(segments.size()-1);
                 prev += oneseg;
                 segments.set(segments.size()-1, prev);
             }
@@ -186,9 +178,9 @@ public final class Segmenter
     /**
      * Returns the places of possible breaks between sentences.
      */
-    private static List getBreaks(String paragraph, Rule rule)
+    private static List<BreakPosition> getBreaks(String paragraph, Rule rule)
     {
-        List res = new ArrayList();
+        List<BreakPosition> res = new ArrayList<BreakPosition>();
         
         Matcher bbm = null;
         if( rule.getBeforebreak()!=null )
@@ -231,7 +223,7 @@ public final class Segmenter
     }
     
     /** A class for a break position that knows which rule contributed to it. */
-    static class BreakPosition implements Comparable
+    static class BreakPosition implements Comparable<BreakPosition>
     {
         /** Break/Exception position. */
         int position;
@@ -272,9 +264,8 @@ public final class Segmenter
          * @throws ClassCastException if the specified object's type prevents it
          *         from being compared to this Object.
          */
-        public int compareTo(Object obj)
+        public int compareTo(BreakPosition that)
         {
-            BreakPosition that = (BreakPosition) obj;
             return this.position - that.position;
         }
     }
@@ -302,43 +293,41 @@ public final class Segmenter
      * @param brules    rules that account to breaks
      * @return glued translated paragraph
      */
-    public static String glue(List sentences, List spaces, List brules)
+    public static String glue(Language sourceLang, Language targetLang, List<String> sentences, List<StringBuffer> spaces, List<Rule> brules)
     {
         if( sentences.size()<=0 )
             return "";                                                          // NOI18N
 	
-        ProjectProperties config = CommandThread.core.getProjectProperties();
-        
         StringBuffer res = new StringBuffer();
-        res.append((String)sentences.get(0));
+        res.append(sentences.get(0));
 	
         for(int i=1; i<sentences.size(); i++)
         {
             StringBuffer sp = new StringBuffer();
-            sp.append((StringBuffer)spaces.get(2*i-1));
-            sp.append((StringBuffer)spaces.get(2*i));
+            sp.append(spaces.get(2*i-1));
+            sp.append(spaces.get(2*i));
             
-            if (CJK_LANGUAGES.contains(config.getTargetLanguage().getLanguageCode()))
+            if (CJK_LANGUAGES.contains(targetLang.getLanguageCode()))
             {
-                Rule rule = (Rule)brules.get(i-1);
+                Rule rule = brules.get(i-1);
                 char lastChar = res.charAt(res.length() - 1);
                 if(   (lastChar != '.')
                    && (   !PatternConsts.SPACY_REGEX.matcher(rule.getBeforebreak()).matches()
                        || !PatternConsts.SPACY_REGEX.matcher(rule.getAfterbreak()).matches()))
                     sp.setLength(0);
             }
-            else if (CJK_LANGUAGES.contains(config.getSourceLanguage().getLanguageCode()) && 
+            else if (CJK_LANGUAGES.contains(sourceLang.getLanguageCode()) && 
                     sp.length()==0)
                 sp.append(" ");                                                 // NOI18N
 	    
             res.append(sp);
-            res.append((String)sentences.get(i));
+            res.append(sentences.get(i));
         }
         return res.toString();
     }
     
     /** CJK languages. */
-    private static final Set CJK_LANGUAGES = new HashSet();
+    private static final Set<String> CJK_LANGUAGES = new HashSet<String>();
     static
     {
         CJK_LANGUAGES.add("ZH");                                                // NOI18N

@@ -4,7 +4,8 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               2008 Alex Buloichik
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -24,44 +25,45 @@
 
 package org.omegat.core.matching;
 
-import java.util.List;
 import org.omegat.util.OStrings;
+import org.omegat.util.Token;
 
 /**
  * Class to compute Levenshtein Distance.
- *
- * <p/>
- * Levenshtein distance (LD) is a measure of the similarity between two strings,
- * which we will refer to as the source string (s) and the target string (t).
- * The distance is the number of deletions, insertions, or substitutions
- * required to transform s into t.
- *
- * <p/>
- * For example,
+ * 
+ * <p/> Levenshtein distance (LD) is a measure of the similarity between two
+ * strings, which we will refer to as the source string (s) and the target
+ * string (t). The distance is the number of deletions, insertions, or
+ * substitutions required to transform s into t.
+ * 
+ * <p/> For example,
  * <ul>
- * <li>If s is "test" and t is "test", then LD(s,t) = 0, because
- * no transformations are needed. The strings are already identical.
- * <li>If s is "test" and t is "tent", then LD(s,t) = 1, because
- * one substitution (change "s" to "n") is sufficient to transform s into t.
+ * <li>If s is "test" and t is "test", then LD(s,t) = 0, because no
+ * transformations are needed. The strings are already identical.
+ * <li>If s is "test" and t is "tent", then LD(s,t) = 1, because one
+ * substitution (change "s" to "n") is sufficient to transform s into t.
  * </ul>
- *
- * <p/>
- * The greater the Levenshtein distance, the more different the strings are.
- * <p/>
- * Levenshtein distance is named after the Russian scientist
- * Vladimir Levenshtein, who devised the algorithm in 1965.
- * If you can't spell or pronounce Levenshtein, the metric is also sometimes
- * called edit distance.
- *
+ * 
+ * <p/> The greater the Levenshtein distance, the more different the strings
+ * are. <p/> Levenshtein distance is named after the Russian scientist Vladimir
+ * Levenshtein, who devised the algorithm in 1965. If you can't spell or
+ * pronounce Levenshtein, the metric is also sometimes called edit distance.
+ * 
+ * alex73's comment: We can't make 'compute' mathod static, because in this case
+ * LevenshteinDistance will not be thread-safe(see 'd' and 'p' arrays). We can't
+ * create these arrays inside 'compute' method, because it's enough slow
+ * operation. We have to create LevenshteinDistance instance one for each thread
+ * where we will call it. It's best way for best performance.
+ * 
  * @see http://www.merriampark.com/ld.htm
- *
+ * 
  * @author Vladimir Levenshtein
  * @author Michael Gilleland, Merriam Park Software
  * @author Chas Emerick, Apache Software Foundation
  * @author Maxym Mykhalchuk
+ * @author Alex Buloichik (alex73mail@gmail.com)
  */
-class LevenshteinDistance
-{
+public class LevenshteinDistance implements ISimilarityCalculator {
     
     /**
      * Get minimum of three values
@@ -72,12 +74,12 @@ class LevenshteinDistance
     }
     
     /** Maximal number of items compared. */
-    public static final int MAX_N = 1000;
+    private static final int MAX_N = 1000;
     
     /** Cost array, horizontally. Here to avoid excessive allocation and garbage collection. */
-    private static short[] d = new short[MAX_N+1];
+    private short[] d = new short[MAX_N+1];
     /** "Previous" cost array, horizontally. Here to avoid excessive allocation and garbage collection. */
-    private static short[] p = new short[MAX_N+1];
+    private short[] p = new short[MAX_N+1];
     
     /*
      * Compute Levenshtein distance between two lists.
@@ -110,13 +112,13 @@ class LevenshteinDistance
      * For perfomance reasons the maximal number of compared items is
      * {@link #MAX_N}.
      */
-    public static int compute(List s, List t)
+    public int compute(Token[] s, Token[] t)
     {
         if( s==null || t==null )
             throw new IllegalArgumentException(OStrings.getString("LD_NULL_ARRAYS_ERROR"));
         
-        int n = s.size(); // length of s
-        int m = t.size(); // length of t
+        int n = s.length; // length of s
+        int m = t.length; // length of t
         
         if( n==0 )
             return m;
@@ -134,7 +136,7 @@ class LevenshteinDistance
         short i; // iterates through s
         short j; // iterates through t
         
-        Object t_j = null; // jth object of t
+        Token t_j = null; // jth object of t
         
         short cost; // cost
         
@@ -143,13 +145,13 @@ class LevenshteinDistance
         
         for (j = 1; j<=m; j++)
         {
-            t_j = t.get(j-1);
+            t_j = t[j-1];
             d[0] = j;
             
-            Object s_i = null; // ith object of s
+            Token s_i = null; // ith object of s
             for (i=1; i<=n; i++)
             {
-                s_i = s.get(i-1);
+                s_i = s[i-1];
                 cost = s_i.equals(t_j) ? (short)0 : (short)1;
                 // minimum of cell to the left+1, to the top+1, diagonally left and up +cost
                 d[i] = minimum(d[i-1]+1, p[i]+1, p[i-1]+cost);

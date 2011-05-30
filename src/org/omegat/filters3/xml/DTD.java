@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -25,6 +25,7 @@
 package org.omegat.filters3.xml;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Document type declaration in XML file.
@@ -52,7 +53,7 @@ public class DTD extends XMLPseudoTag
         return systemId;
     }
     
-    private ArrayList entities;
+    private List<Entity> entities;
     
     /** Creates a new instance of Doctype */
     public DTD(String name, String publicId, String systemId)
@@ -60,7 +61,7 @@ public class DTD extends XMLPseudoTag
         this.name = name;
         this.publicId = publicId;
         this.systemId = systemId;
-        entities = new ArrayList();
+        entities = new ArrayList<Entity>();
     }
 
     public void addEntity(Entity entity)
@@ -87,9 +88,8 @@ public class DTD extends XMLPseudoTag
         if (entities.size()>0)
         {
             res.append("\n[\n");                                                // NOI18N
-            for (int i=0; i<entities.size(); i++)
+            for (Entity entity : entities)
             {
-                Entity entity = (Entity) entities.get(i);
                 res.append(entity.toString());
                 res.append("\n");                                               // NOI18N
             }

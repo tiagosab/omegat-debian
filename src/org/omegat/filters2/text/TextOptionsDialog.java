@@ -4,7 +4,8 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               2009 Didier Briel
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -37,7 +38,8 @@ import org.omegat.util.OStrings;
 /**
  * Modal dialog to edit Text filter options.
  *
- * @author  Maxym Mykhalchuk
+ * @author Maxym Mykhalchuk
+ * @author Didier Briel
  */
 public class TextOptionsDialog extends javax.swing.JDialog
 {
@@ -57,20 +59,20 @@ public class TextOptionsDialog extends javax.swing.JDialog
         this.options = options;
         initComponents();
         
-        if (options!=null)
+        if (options==null)
+            options = new TextOptions(); // Set default options
+
+        switch (options.getSegmentOn())
         {
-            switch (options.getSegmentOn())
-            {
-                case TextOptions.SEGMENT_BREAKS:
-                    breaksRB.setSelected(true);
-                    break;
-                case TextOptions.SEGMENT_EMPTYLINES:
-                    emptyLinesRB.setSelected(true);
-                    break;
-                case TextOptions.SEGMENT_NEVER:
-                    neverRB.setSelected(true);
-                    break;
-            }
+            case TextOptions.SEGMENT_BREAKS:
+                breaksRB.setSelected(true);
+                break;
+            case TextOptions.SEGMENT_EMPTYLINES:
+                emptyLinesRB.setSelected(true);
+                break;
+            case TextOptions.SEGMENT_NEVER:
+                neverRB.setSelected(true);
+                break;
         }
         
         //  Handle escape key to close the window

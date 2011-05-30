@@ -4,8 +4,8 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-           (C) 2007 Didier Briel
-               Home page: http://www.omegat.org/omegat/omegat.html
+           (C) 2007-2008 Didier Briel
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -32,26 +32,22 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
-import java.util.regex.*;
-import java.util.Collections; 
-import java.util.ArrayList;
-import java.util.Comparator;
 
 import org.omegat.filters2.AbstractFilter;
 import org.omegat.filters2.Instance;
 import org.omegat.filters2.TranslationException;
-import org.omegat.filters3.xml.openxml.*;
 import org.omegat.util.LFileCopy;
-import org.omegat.util.OStrings;
 import org.omegat.util.Log;
+import org.omegat.util.OStrings;
 
 /**
  * Filter for Open XML file format.
@@ -66,6 +62,7 @@ public class OpenXMLFilter extends AbstractFilter
     private static final Pattern DIGITS = Pattern.compile("(\\d+)\\.xml");      // NOI18N
 
     
+    private boolean optionsAlreadyRead = false;
     /**
      * Defines the documents to read according to options
      */
@@ -79,30 +76,36 @@ public class OpenXMLFilter extends AbstractFilter
     // Excel
     "|(sharedStrings\\.xml)|(comments\\d+\\.xml)" +                             
     // PowerPoint
-    "|(slide\\d+\\.xml)|(notesSlide\\d+\\.xml)"                                 
+    "|(slide\\d+\\.xml)|(slideMaster\\d+\\.xml)|(notesSlide\\d+\\.xml)"                                 
 */          
-        OpenXMLOptions options = (OpenXMLOptions) this.getOptions();
-        if (options == null)
-            options = new OpenXMLOptions();
+        if (!optionsAlreadyRead){
+            OpenXMLOptions options = (OpenXMLOptions) this.getOptions();
+            if (options == null)
+                options = new OpenXMLOptions();
+
+            if (options.getTranslateComments())
+                DOCUMENTS += "|(comments\\.xml)";                               // NOI18N
+            if (options.getTranslateFootnotes())
+                DOCUMENTS += "|(footnotes\\.xml)";                              // NOI18N
+            if (options.getTranslateEndnotes())
+                DOCUMENTS += "|(endnotes\\.xml)";                               // NOI18N
+            if (options.getTranslateHeaders())
+                DOCUMENTS += "|(header\\d+\\.xml)";                             // NOI18N
+            if (options.getTranslateFooters())
+                DOCUMENTS += "|(footer\\d+\\.xml)";                             // NOI18N
+            DOCUMENTS += "|(sharedStrings\\.xml)";                              // NOI18N    
+            if (options.getTranslateExcelComments())
+                DOCUMENTS += "|(comments\\d+\\.xml)";                           // NOI18N
+            DOCUMENTS += "|(slide\\d+\\.xml)";                                  // NOI18N
+            if (options.getTranslateSlideMasters())          
+                DOCUMENTS += "|(slideMaster\\d+\\.xml)";                        // NOI18N
+            if (options.getTranslateSlideComments())
+                DOCUMENTS += "|(notesSlide\\d+\\.xml)";                         // NOI18N
+            TRANSLATABLE = Pattern.compile(DOCUMENTS);
+            optionsAlreadyRead = true;
+        }
+    }
         
-        if (options.getTranslateComments())
-            DOCUMENTS += "|(comments\\.xml)";                                   // NOI18N
-        if (options.getTranslateFootnotes())
-            DOCUMENTS += "|(footnotes\\.xml)";                                  // NOI18N
-        if (options.getTranslateEndnotes())
-            DOCUMENTS += "|(endnotes\\.xml)";                                   // NOI18N
-        if (options.getTranslateHeaders())
-            DOCUMENTS += "|(header\\d+\\.xml)";                                 // NOI18N
-        if (options.getTranslateFooters())
-            DOCUMENTS += "|(footer\\d+\\.xml)";                                 // NOI18N
-        DOCUMENTS += "|(sharedStrings\\.xml)";                                  // NOI18N    
-        if (options.getTranslateExcelComments())
-            DOCUMENTS += "|(comments\\d+\\.xml)";                               // NOI18N
-        DOCUMENTS += "|(slide\\d+\\.xml)";                                      // NOI18N
-        if (options.getTranslateSlideComments())
-            DOCUMENTS += "|(notesSlide\\d+\\.xml)";                             // NOI18N
-        TRANSLATABLE = Pattern.compile(DOCUMENTS);
-    }       
     
     /** Creates a new instance of OpenXMLFilter */
     public OpenXMLFilter()
@@ -117,10 +120,10 @@ public class OpenXMLFilter extends AbstractFilter
             defineDOCUMENTSOptions(); // Define the documents to read
             
             ZipFile file = new ZipFile(inFile);
-            Enumeration entries = file.entries();
+            Enumeration<? extends ZipEntry> entries = file.entries();
             while (entries.hasMoreElements())
             {
-                ZipEntry entry = (ZipEntry) entries.nextElement();
+                ZipEntry entry = entries.nextElement();
                 String shortname = entry.getName();
                 shortname = removePath(shortname);
                 Matcher filematch = TRANSLATABLE.matcher(shortname);
@@ -134,8 +137,10 @@ public class OpenXMLFilter extends AbstractFilter
     OpenXMLXMLFilter xmlfilter = null;
     private OpenXMLXMLFilter getXMLFilter()
     {
-        if (xmlfilter==null)
+        if (xmlfilter==null) {
             xmlfilter = new OpenXMLXMLFilter();
+        }
+        xmlfilter.setParseCallback(entryProcessingCallback);
         // Defining the actual dialect, because at this step 
         // we have the options
         OpenXMLDialect dialect = (OpenXMLDialect) xmlfilter.getDialect();
@@ -177,27 +182,27 @@ public class OpenXMLFilter extends AbstractFilter
      * which is actually a ZIP file consisting of many XML files, 
      * some of which should be translated.
      */
-    public List processFile(File inFile, String inEncoding, File outFile, 
+    public List<File> processFile(File inFile, String inEncoding, File outFile, 
                             String outEncoding) 
                             throws IOException, TranslationException
     {
-        ZipFile zipfile = new ZipFile(inFile);
+	defineDOCUMENTSOptions(); // Define the documents to read
+	 
+	ZipFile zipfile = new ZipFile(inFile);
         ZipOutputStream zipout = null;
         if (outFile!=null)
             zipout = new ZipOutputStream(new FileOutputStream(outFile));
-        Enumeration unsortedZipcontents = zipfile.entries();
-        List filelist = Collections.list(unsortedZipcontents);
-        Collections.sort(filelist, new Comparator()
+        Enumeration<? extends ZipEntry> unsortedZipcontents = zipfile.entries();
+        List<? extends ZipEntry> filelist = Collections.list(unsortedZipcontents);
+        Collections.sort(filelist, new Comparator<ZipEntry>()
         {
          // Sort filenames, because zipfile.entries give a random order
          // We use a simplified natural sort, to have slide1, slide2 ... slide10
          // instead of slide1, slide10, slide 2 
          // We also order files arbitrarily, to have, for instance
          // documents.xml before comments.xml
-             public int compare(Object o1, Object o2)
+             public int compare(ZipEntry z1, ZipEntry z2)
              {
-                 ZipEntry z1 = (ZipEntry)o1; 
-                 ZipEntry z2 = (ZipEntry)o2;
                  String s1 = z1.getName();
                  String s2 = z2.getName();
                  String[] words1 = s1.split("\\d+\\.");                         // NOI18N
@@ -251,11 +256,11 @@ public class OpenXMLFilter extends AbstractFilter
                  }
              }
         });
-        Enumeration zipcontents = Collections.enumeration(filelist);
+        Enumeration<? extends ZipEntry> zipcontents = Collections.enumeration(filelist);
  
         while (zipcontents.hasMoreElements())
         {
-            ZipEntry zipentry = (ZipEntry) zipcontents.nextElement();
+            ZipEntry zipentry = zipcontents.nextElement();
             String shortname = zipentry.getName();
             shortname = removePath(shortname);
             Matcher filematch = TRANSLATABLE.matcher(shortname);

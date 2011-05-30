@@ -4,7 +4,8 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               2008 Alex Buloichik
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -20,69 +21,75 @@
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-**************************************************************************/
+ **************************************************************************/
 
 package org.omegat.core.threads;
 
 import java.text.DateFormat;
-import java.util.Calendar;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.omegat.util.OStrings;
-import org.omegat.util.StaticUtils;
+import org.omegat.core.Core;
+import org.omegat.core.data.IProject;
 
 /**
- * An independent stream to save project,
- * created in order not to freese UI while project is saved (may take a lot)
- *
+ * An independent stream to save project, created in order not to freese UI
+ * while project is saved (may take a lot)
+ * 
  * @author Keith Godfrey
+ * @author Alex Buloichik (alex73mail@gmail.com)
  */
-class SaveThread extends Thread
-{
-    public SaveThread()
-    {
-        setName("Save thread");	// NOI18N
+public class SaveThread extends Thread implements IAutoSave {
+    private static final Logger LOGGER = Logger.getLogger(SaveThread.class
+            .getName());
+
+    private static final int SAVE_DURATION = 10 * 60 * 1000; // 10 minutes;
+
+    private boolean needToSaveNow;
+    private boolean enabled;
+
+    public SaveThread() {
+        setName("Save thread"); // NOI18N
     }
-    
-    public void run()
-    {
-        try
-        {
-            sleep(SAVE_DURATION);
-        }
-        catch (InterruptedException e2)
-        {
-            interrupt();
-        }
-        
-        while( !interrupted() )
-        {
-            synchronized(CommandThread.core)
-            {
-                if( CommandThread.core.isProjectModified() )
-                {
-                    CommandThread.core.save();
-                    CommandThread.core.m_transFrame.setMessageText(
-                            StaticUtils.format(
-                                    OStrings.getString("ST_PROJECT_AUTOSAVED"),
-                                    new Object[]
-                                    {
-                                        DateFormat.getTimeInstance(DateFormat.SHORT).
-                                        format(new Date())
-                                    } ));
+
+    public synchronized void disable() {
+        LOGGER.fine("Disable autosave");
+        enabled = false;
+    }
+
+    public synchronized void enable() {
+        LOGGER.fine("Enable autosave");
+        enabled = true;
+        needToSaveNow = false;
+        notify();
+    }
+
+    public void run() {
+        try {
+            while (true) {
+                synchronized (this) {
+                    // Set flag for saving. If somebody will reset time, he will
+                    // clear this flag also.
+                    needToSaveNow = true;
+                    // sleep
+                    wait(SAVE_DURATION);
+                }
+                if (needToSaveNow && enabled) {
+                    // Wait finished by time and autosaving enabled.
+                    IProject dataEngine = Core.getProject();
+                    LOGGER.fine("Start project save from SaveThread");
+                    dataEngine.saveProject();
+                    LOGGER.fine("Finish project save from SaveThread");
+                    Core.getMainWindow().showStatusMessageRB(
+                            "ST_PROJECT_AUTOSAVED",
+                            DateFormat.getTimeInstance(DateFormat.SHORT)
+                                    .format(new Date()));
                 }
             }
-            
-            try
-            {
-                sleep(SAVE_DURATION);
-            }
-            catch (InterruptedException e)
-            {
-                interrupt();
-            }
+        } catch (InterruptedException ex) {
+            LOGGER.log(Level.WARNING, "Save thread interrupted", ex);
+            return;
         }
     }
-    
-    private static final int SAVE_DURATION = 10 * 60 * 1000;  // 10 minutes;
 }

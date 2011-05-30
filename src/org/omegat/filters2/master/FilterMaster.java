@@ -4,10 +4,12 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-           (C) 2005-06 Henry Pijffers
-           (C) 2006 Martin Wunderlich
-           (C) 2006-2007 Didier Briel
-           (C) 2008 Martin Fleurke
+               2005-2006 Henry Pijffers
+               2006 Martin Wunderlich
+               2006-2007 Didier Briel
+               2008 Martin Fleurke, Didier Briel
+               2009 Didier Briel, Arno Peters
+
                Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
@@ -43,30 +45,32 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import javax.swing.JOptionPane;
 
-import org.omegat.core.StringEntry;
-import org.omegat.core.segmentation.Segmenter;
-import org.omegat.core.threads.CommandThread;
-import org.omegat.core.threads.SearchThread;
+import org.omegat.core.Core;
 import org.omegat.filters2.AbstractFilter;
+import org.omegat.filters2.IParseCallback;
 import org.omegat.filters2.Instance;
 import org.omegat.filters2.TranslationException;
-import org.omegat.filters2.html2.HTMLFilter2;
+import org.omegat.filters2.xtagqxp.XtagFilter;
 import org.omegat.filters2.hhc.HHCFilter2;
+import org.omegat.filters2.html2.HTMLFilter2;
+import org.omegat.filters2.latex.LatexFilter;
 import org.omegat.filters2.po.PoFilter;
+import org.omegat.filters2.subtitles.SrtFilter;
 import org.omegat.filters2.text.TextFilter;
 import org.omegat.filters2.text.bundles.ResourceBundleFilter;
 import org.omegat.filters2.text.ini.INIFilter;
+import org.omegat.filters3.xml.android.AndroidFilter;
 import org.omegat.filters3.xml.docbook.DocBookFilter;
 import org.omegat.filters3.xml.opendoc.OpenDocFilter;
-import org.omegat.filters3.xml.opendoc.OpenDocXMLFilter;
 import org.omegat.filters3.xml.openxml.OpenXMLFilter;
-import org.omegat.filters3.xml.openxml.OpenXMLXMLFilter;
-import org.omegat.filters3.xml.xliff.XLIFFFilter;
+import org.omegat.filters3.xml.resx.ResXFilter;
 import org.omegat.filters3.xml.xhtml.XHTMLFilter;
-import org.omegat.util.Language;
+import org.omegat.filters3.xml.xliff.XLIFFFilter;
 import org.omegat.util.LFileCopy;
+import org.omegat.util.Language;
 import org.omegat.util.Log;
 import org.omegat.util.OStrings;
 import org.omegat.util.Preferences;
@@ -78,6 +82,10 @@ import org.omegat.util.StaticUtils;
  *
  * @author Maxym Mykhalchuk
  * @author Henry Pijffers
+ * @author Martin Wunderlich
+ * @author Didier Briel
+ * @author Martin Fleurke
+ * @author Arno Peters
  */
 public class FilterMaster
 {
@@ -92,7 +100,7 @@ public class FilterMaster
     public static String OT161_VERSION      = "1.6.1";                          // NOI18N
     public static String OT170_VERSION      = "1.7.0";                          // NOI18N
     /** Currently file filters support version. */
-    public static String CURRENT_VERSION = OT170_VERSION;
+    public static String CURRENT_VERSION = "2.0";
 
     /** Wrapper around filters storage in an XML file */
     private Filters  filters;
@@ -127,140 +135,6 @@ public class FilterMaster
         return master;
     }
     
-
-    private boolean memorizing = false;
-    /**
-     * Call this to turn on/off memorizing passed strings
-     * in internal Translation Memory.
-     * Typically to be called by Search-in-files functionality.
-     */
-    private void setMemorizing(boolean value)
-    {
-        memorizing = value;
-    }
-    /**
-     * Returns whether we're memorizing passed strings
-     * in internal Translation Memory.
-     */
-    private boolean isMemorizing()
-    {
-        return memorizing && (searchthread==null);
-    }
-    
-    /**
-     * This method is called by filters to:
-     * <ul>
-     * <li>Instruct OmegaT what source strings are translatable.
-     * <li>Get the translation of each source string.
-     * </ul>
-     *
-     * @param entry Translatable source string
-     * @return Translation of the source string. If there's no translation, 
-     * returns the source string itself.
-     */
-    public String processEntry(String entry)
-    {
-        // replacing all occurrences of single CR (\r) or CRLF (\r\n) by LF (\n)
-        // this is reversed at the end of the method
-        // fix for bug 1462566
-        boolean crlf = entry.indexOf("\r\n") > 0;
-        if (crlf)
-            entry = entry.replaceAll("\\r\\n", "\n");
-        boolean cr = entry.indexOf("\r") > 0;
-        if (cr)
-            entry = entry.replaceAll("\\r", "\n");
-
-        // Some special space handling: skip leading and trailing whitespace 
-        // and non-breaking-space
-        int len = entry.length();
-        int b = 0;
-        StringBuffer bs = new StringBuffer();
-        while( b<len && (Character.isWhitespace(entry.charAt(b)) || 
-                         entry.charAt(b)=='\u00A0') )
-        {
-            bs.append(entry.charAt(b));
-            b++;
-        }
-
-        int e = len-1;
-        StringBuffer es = new StringBuffer();
-        while( e>=b && (Character.isWhitespace(entry.charAt(e)) || 
-                        entry.charAt(e)=='\u00A0') )
-        {
-            es.append(entry.charAt(e));
-            e--;
-        }
-        es.reverse();
-
-        entry = StaticUtils.fixChars(entry.substring(b, e+1));
-        
-        StringBuffer res = new StringBuffer();
-        res.append(bs);
-        
-        if( CommandThread.core.getProjectProperties().isSentenceSegmentingEnabled() )
-        {
-            List spaces = new ArrayList();
-            List brules = new ArrayList();
-            List segments = Segmenter.segment(entry, spaces, brules);
-            for(int i=0; i<segments.size(); i++)
-            {
-                String onesrc = (String)segments.get(i);
-                segments.set(i, processSingleEntry(onesrc));
-            }
-            res.append(Segmenter.glue(segments, spaces, brules));
-        }
-        else
-            res.append(processSingleEntry(entry));
-        
-        res.append(es);
-
-        // replacing all occurrences of LF (\n) by either single CR (\r) or CRLF (\r\n)
-        // this is a reversal of the process at the beginning of this method
-        // fix for bug 1462566
-        String result = res.toString();
-        if (crlf)
-            result = result.replaceAll("\\n", "\r\n");
-        else if (cr)
-            result = result.replaceAll("\\n", "\r");
-
-        return result;
-    }
-    
-    /**
-     * Processes a single entry.
-     * This method doesn't perform any changes on the passed string.
-     *
-     * @param src Translatable source string
-     * @return Translation of the source string. If there's no translation, returns the source string itself.
-     */
-    private String processSingleEntry(String src)
-    {
-        // if the search thread is non-null, we're searching inside files
-        // else we're translating them
-        if( searchthread!=null )
-        {
-            searchthread.searchText(src);
-            return src;
-        }
-        else
-        {
-            StringEntry se = CommandThread.core.getStringEntry(src);
-            if( isMemorizing() )
-                CommandThread.core.addEntry(src);
-            if( se==null )
-            {
-                return src;
-            }
-            else
-            {
-                String s = se.getTranslation();
-                if( s==null || s.length()==0 )
-                    s = src;
-                return s;
-            }
-        }
-    }
-    
     /**
      * OmegaT core calls this method to load a source file.
      *
@@ -269,7 +143,7 @@ public class FilterMaster
      * @return          Whether the file was handled by one of OmegaT filters.
      * @see #translateFile(String, String, String)
      */
-    public boolean loadFile(String filename, Set processedFiles)
+    public boolean loadFile(String filename, Set<File> processedFiles, IParseCallback parseCallback)
             throws IOException, TranslationException
     {
         try
@@ -278,12 +152,13 @@ public class FilterMaster
             if( lookup==null )
                 return false;
 
-            setMemorizing(true);
-
             File inFile = new File(filename);
             String inEncoding = lookup.inEncoding;
             AbstractFilter filterObject = lookup.filterObject;
-            List files = filterObject.processFile(inFile, inEncoding, null, null);
+            
+            filterObject.setParseCallback(parseCallback);
+            
+            List<File> files = filterObject.processFile(inFile, inEncoding, null, null);
             if (files!=null)
                 processedFiles.addAll(files);
         }
@@ -292,47 +167,7 @@ public class FilterMaster
             ioe.printStackTrace();
             throw new IOException(filename + "\n" + ioe);                       // NOI18N
         }
-        
-        setMemorizing(false);
         return true;
-    }
-    
-    
-    private SearchThread searchthread = null;
-    /**
-     * When mode is set,
-     * strings are passed to supplied search thread.
-     *
-     * @param searchthread The Search Thread supplied.
-     */
-    private void setSearchMode(SearchThread searchthread)
-    {
-        setMemorizing(false);
-        this.searchthread = searchthread;
-    }
-    /**
-     * Cancels search mode.
-     */
-    private void cancelSearchMode()
-    {
-        this.searchthread = null;
-    }
-    
-    
-    /**
-     * OmegaT core calls this method to search within a source file.
-     * (used for source files outside project source dir)
-     *
-     * @param filename  The name of the source file to search.
-     * @param processedFiles Set of already searched files.
-     * @see #translateFile(String, String, String)
-     */
-    public void searchFile(String filename, SearchThread searchthread, Set processedFiles)
-            throws IOException, TranslationException
-    {
-        setSearchMode(searchthread);
-        loadFile(filename, processedFiles);
-        cancelSearchMode();
     }
     
     /**
@@ -352,11 +187,9 @@ public class FilterMaster
      * @param targetdir The folder to place the translated inFile to.
      * @param processedFiles Set of all already processed files not to redo them again.
      */
-    public void translateFile(String sourcedir, String filename, String targetdir, Set processedFiles)
+    public void translateFile(String sourcedir, String filename, String targetdir, Set<File> processedFiles, IParseCallback parseCallback)
             throws IOException, TranslationException
-    {
-        setMemorizing(false);
-        
+    {        
         LookupInformation lookup = lookupFilter(sourcedir+File.separator+filename);
         if( lookup==null )
         {
@@ -385,7 +218,10 @@ public class FilterMaster
         String outEncoding = instance.getTargetEncoding();
         
         AbstractFilter filterObject = lookup.filterObject;
-        List files = filterObject.processFile(inFile, inEncoding, outFile, outEncoding);
+        
+        filterObject.setParseCallback(parseCallback);
+        
+        List<File> files = filterObject.processFile(inFile, inEncoding, outFile, outEncoding);
         if (files!=null)
             processedFiles.addAll(files);
     }
@@ -462,7 +298,7 @@ public class FilterMaster
     }
     
     
-    private static List supportedEncodings = null;
+    private static List<String> supportedEncodings = null;
     /**
      * Queries JRE for the list of supported encodings.
      * Also adds the human name for no/automatic inEncoding.
@@ -470,11 +306,11 @@ public class FilterMaster
      * 
      * @return names of all the encodings in an array
      */
-    public static List getSupportedEncodings()
+    public static List<String> getSupportedEncodings()
     {
         if( supportedEncodings==null )
         {
-            supportedEncodings = new ArrayList();
+            supportedEncodings = new ArrayList<String>();
             supportedEncodings.add(AbstractFilter.ENCODING_AUTO_HUMAN);
             supportedEncodings.addAll(Charset.availableCharsets().keySet());
         }
@@ -512,7 +348,7 @@ public class FilterMaster
      */
     class MyExceptionListener implements ExceptionListener
     {
-        private List exceptionsList = new ArrayList();
+        private List<Exception> exceptionsList = new ArrayList<Exception>();
         private boolean exceptionOccured = false;
         public void exceptionThrown(Exception e)
         {
@@ -530,7 +366,7 @@ public class FilterMaster
         /**
          * Returns the list of occured exceptions.
          */
-        public List getExceptionsList()
+        public List<Exception> getExceptionsList()
         {
             return exceptionsList;
         }
@@ -552,11 +388,10 @@ public class FilterMaster
             if( myel.isExceptionOccured() )
             {
                 StringBuffer sb = new StringBuffer();
-                List exceptions = myel.getExceptionsList();
-                for(int i=0; i<exceptions.size(); i++)
+                for(Exception ex : myel.getExceptionsList())
                 {
                     sb.append("    ");                                          // NOI18N
-                    sb.append(exceptions.get(i));
+                    sb.append(ex);
                     sb.append("\n");                                            // NOI18N
                 }
                 throw new Exception("Exceptions occured while loading file filters:\n"+sb.toString()); // NOI18N
@@ -565,14 +400,8 @@ public class FilterMaster
             checkIfAllFilterPluginsAreAvailable();
             
             // checking the version
- // DB Begin
             if (CURRENT_VERSION.compareTo(Preferences.getPreference(Preferences.FILTERS_VERSION))>0)
             {
-//                String filtersVersion = Preferences.getPreference(Preferences.FILTERS_VERSION);
-//                if (   !filtersVersion.equals(OT160FINAL_VERSION)
-//                    && (filtersVersion.compareTo(OT160RC12a_VERSION) < 0))
-//                {
-// DB End
                 // yep, the config file with filters settings is of the older version
 
                 // initing defaults
@@ -626,7 +455,7 @@ public class FilterMaster
         }
 
         // now adding those filters from defaults which appeared in new version only
-        HashSet existing = new HashSet();
+        Set<String> existing = new HashSet<String>();
         for (int i = 0; i < filters.getFilter().length; i++)
             existing.add(filters.getFilter(i).getClassName());
         for (int i = 0; i < defaults.getFilter().length; i++)
@@ -646,7 +475,7 @@ public class FilterMaster
     private void checkIfAllFilterPluginsAreAvailable()
     {
         ClassLoader cl = PluginUtils.getPluginsClassloader();
-        List plugins = PluginUtils.getPlugins();
+        List<List<Object>> plugins = PluginUtils.getPlugins();
         
         int k=0;
         while( k<filters.filtersSize() )
@@ -658,9 +487,8 @@ public class FilterMaster
                 continue;
             }
             
-            for(int i=0; i<plugins.size(); i++)
+            for(List<Object> filterList : plugins)
             {
-                List filterList = (List)plugins.get(i);
                 for(int j=1; j<filterList.size(); j++)
                 {
                     String classname = (String)filterList.get(j);
@@ -669,8 +497,8 @@ public class FilterMaster
                         // trying to create
                         try
                         {
-                            Class filter_class = cl.loadClass(classname);
-                            Constructor filter_constructor = filter_class.getConstructor((Class[])null);
+                            Class<?> filter_class = cl.loadClass(classname);
+                            Constructor<?> filter_constructor = filter_class.getConstructor((Class[])null);
                             Object filter = filter_constructor.newInstance((Object[])null);
                             if( filter instanceof AbstractFilter )
                             {
@@ -704,7 +532,9 @@ public class FilterMaster
     private Filters setupBuiltinFilters()
     {
         Filters res = new Filters();
+        res.addFilter(new OneFilter(new AndroidFilter(), false));
         res.addFilter(new OneFilter(new TextFilter(), false));
+        res.addFilter(new OneFilter(new LatexFilter(), false));
         res.addFilter(new OneFilter(new PoFilter(), false));
         res.addFilter(new OneFilter(new ResourceBundleFilter(), false));
         res.addFilter(new OneFilter(new XHTMLFilter(), false));
@@ -715,6 +545,9 @@ public class FilterMaster
         res.addFilter(new OneFilter(new OpenDocFilter(), false));
         res.addFilter(new OneFilter(new OpenXMLFilter(), false));
         res.addFilter(new OneFilter(new XLIFFFilter(), false));        
+        res.addFilter(new OneFilter(new SrtFilter(), false));
+        res.addFilter(new OneFilter(new XtagFilter(), false));   
+        res.addFilter(new OneFilter(new ResXFilter(), false));
         return res;
     }
     
@@ -732,17 +565,17 @@ public class FilterMaster
     private void loadFilterClassesFromPlugins()
     {
         ClassLoader cl = PluginUtils.getPluginsClassloader();
-        List plugins = PluginUtils.getPlugins();
+        List<List<Object>> plugins = PluginUtils.getPlugins();
         
         for(int i=0; i<plugins.size(); i++)
         {
-            List filterList = (List)plugins.get(i);
+            List<Object> filterList = plugins.get(i);
             for(int j=1; j<filterList.size(); j++)
             {
                 try
                 {
-                    Class filter_class = cl.loadClass((String)filterList.get(j));
-                    Constructor filter_constructor = filter_class.getConstructor((Class[])null);
+                    Class<?> filter_class = cl.loadClass((String)filterList.get(j));
+                    Constructor<?> filter_constructor = filter_class.getConstructor((Class[])null);
                     Object filter = filter_constructor.newInstance((Object[])null);
                     if( filter instanceof AbstractFilter )
                     {
@@ -881,8 +714,8 @@ public class FilterMaster
         res = res.replaceAll(targetRegexer(AbstractFilter.TFP_EXTENSION),
                 extension);
         
-        Language targetLang = new Language(
-                Preferences.getPreference(Preferences.TARGET_LOCALE));
+        
+        Language targetLang = Core.getProject().getProjectProperties().getTargetLanguage();
         
         res = res.replaceAll(targetRegexer(AbstractFilter.TFP_TARGET_LOCALE),
                 targetLang.getLocaleCode());

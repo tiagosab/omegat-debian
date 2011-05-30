@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               2007-2008 Didier Briel
+               2007-2008 Didier Briel, Martin Fleurke
                Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
@@ -28,10 +28,10 @@ package org.omegat.filters3.xml.xhtml;
 import java.awt.Dialog;
 import java.io.File;
 import java.io.Serializable;
+import java.util.regex.Pattern;
 
 import org.omegat.filters2.Instance;
 import org.omegat.filters3.xml.XMLFilter;
-import org.omegat.filters3.xml.XMLDialect;
 import org.omegat.util.Log;
 import org.omegat.util.OStrings;
 
@@ -40,6 +40,7 @@ import org.omegat.util.OStrings;
  *
  * @author Maxym Mykhalchuk
  * @author Didier Briel
+ * @author Martin Fleurke
  */
 public class XHTMLFilter extends XMLFilter
 {
@@ -52,7 +53,7 @@ public class XHTMLFilter extends XMLFilter
         super(new XHTMLDialect());
         do_not_send_to_core = false;
     }
-    
+
     /**
      * Human-readable name of the File Format this filter supports.
      *
@@ -78,9 +79,10 @@ public class XHTMLFilter extends XMLFilter
         {
             new Instance("*.html", null, null),
             new Instance("*.xhtml", null, null),
+            new Instance("*.xht", null, null),
         };
     }
-    
+
     /**
      * Either the encoding can be read, or it is UTF-8.
      * @return <code>false</code>
@@ -135,13 +137,23 @@ public class XHTMLFilter extends XMLFilter
     
     /**
      * Overrides superimplementation not to send translatable content on XHTML
-     * validity check. */
+     * validity check, and don't translate items that match regular expression. */
     public String translate(String entry)
     {
         if (do_not_send_to_core)
             return entry;
-        else
+        else {
+            Pattern skipRegExpPattern = 
+                    ((XHTMLDialect)this.getDialect()).getSkipRegExpPattern();
+            if (skipRegExpPattern != null) 
+            {
+                if (skipRegExpPattern.matcher(entry).matches()) 
+                {
+                    return entry;
+                }
+            }
             return super.translate(entry);
+        }
     }
     
     /**

@@ -4,8 +4,9 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
- Portions Copyright 2006 Henry Pijffers
-               Home page: http://www.omegat.org/omegat/omegat.html
+               2006 Henry Pijffers
+               2009 Didier Briel
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -34,12 +35,16 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.omegat.core.TransMemory;
-import org.omegat.core.matching.SourceTextEntry;
+import org.omegat.core.Core;
+import org.omegat.core.data.IProject;
+import org.omegat.core.data.ParseEntry;
+import org.omegat.core.data.SourceTextEntry;
+import org.omegat.core.data.TransMemory;
 import org.omegat.filters2.TranslationException;
 import org.omegat.filters2.master.FilterMaster;
-import org.omegat.gui.SearchWindow;
 import org.omegat.gui.main.MainWindow;
+import org.omegat.gui.search.SearchWindow;
+import org.omegat.util.Log;
 import org.omegat.util.OConsts;
 import org.omegat.util.OStrings;
 import org.omegat.util.StaticUtils;
@@ -52,6 +57,7 @@ import org.omegat.util.StaticUtils;
  *
  * @author Keith Godfrey
  * @author Henry Pijffers
+ * @author Didier Briel
  */
 public class SearchThread extends Thread
 {
@@ -68,9 +74,6 @@ public class SearchThread extends Thread
                 
         m_numFinds = 0;
         m_curFileName = "";	// NOI18N
-        
-        m_extList = new ArrayList();
-        m_extMapList = new ArrayList();
     }
     
     /////////////////////////////////////////////////////////
@@ -96,18 +99,20 @@ public class SearchThread extends Thread
                               boolean keyword,
                               boolean caseSensitive,
                               boolean regex,
-                              boolean tm)
+                              boolean tm,
+                              boolean allResults)
     {
         if (!m_searching)
         {
             m_searchDir = rootDir;
             m_searchRecursive = recursive;
             m_tmSearch = tm;
+            m_allResults = allResults;
             m_searching = true;
-            m_entrySet = new HashSet(); // HP
+            m_entrySet = new HashSet<String>(); // HP
 
             // create a list of matchers
-            m_matchers = new ArrayList();
+            m_matchers = new ArrayList<Matcher>();
 
             // determine pattern matching flags
             int flags = caseSensitive ? 0 : Pattern.CASE_INSENSITIVE + Pattern.UNICODE_CASE;
@@ -204,15 +209,16 @@ public class SearchThread extends Thread
                         {
                             // something bad happened
                             // alert user to badness
-                            String msg = OStrings.getString("ST_FILE_SEARCH_ERROR");
-                            CommandThread.core.displayError(msg, e);
+                            Log.logErrorRB(e, "ST_FILE_SEARCH_ERROR");
+                            Core.getMainWindow().displayErrorRB(e, "ST_FILE_SEARCH_ERROR");
+                            
                         }
                         catch (TranslationException te)
                         {
                             // something bad happened
                             // alert user to badness
-                            String msg = OStrings.getString("ST_FILE_SEARCH_ERROR");
-                            CommandThread.core.displayError(msg, te);
+                            Log.logErrorRB(te, "ST_FILE_SEARCH_ERROR");
+                            Core.getMainWindow().displayErrorRB(te, "ST_FILE_SEARCH_ERROR");
                         }
                     }
                     
@@ -231,8 +237,8 @@ public class SearchThread extends Thread
         }
         catch (RuntimeException re)
         {
-            String msg = OStrings.getString("ST_FATAL_ERROR");
-            CommandThread.core.displayError(msg, re);
+            Log.logErrorRB(re, "ST_FATAL_ERROR");
+            Core.getMainWindow().displayErrorRB(re, "ST_FATAL_ERROR");
             m_window.threadDied();
         }
     }
@@ -253,11 +259,12 @@ public class SearchThread extends Thread
 
         if (entryNum >= 0)
         {
-            if (!m_entrySet.contains(src + target)) { // HP, duplicate entry prevention
+           if (!m_entrySet.contains(src + target) || m_allResults) { // HP, duplicate entry prevention
                 // entries are referenced at offset 1 but stored at offset 0
                 m_window.addEntry(entryNum+1, null, (entryNum+1)+"> "+src, target);	// NOI18N
-                m_entrySet.add(src + target); // HP
-            }
+                if (!m_allResults) // If we filter results
+                    m_entrySet.add(src + target); // HP
+           }
         }
         else
         {
@@ -274,14 +281,15 @@ public class SearchThread extends Thread
 
     private void searchProject()
     {
+        IProject project = Core.getProject();
         // reset the number of search hits
         m_numFinds = 0;
 
         // search through all project entries
-        int i;
-        for (i = 0; i < CommandThread.core.numEntries(); i++) {
+        IProject dataEngine = Core.getProject();
+        for (int i = 0; i < project.getAllEntries().size(); i++) {
             // get the source and translation of the next entry
-            SourceTextEntry ste = CommandThread.core.getSTE(i);
+            SourceTextEntry ste = dataEngine.getAllEntries().get(i);
             String srcText = ste.getSrcText();
             String locText = ste.getTranslation();
 
@@ -299,9 +307,7 @@ public class SearchThread extends Thread
         // search the TM, if requested
         if (m_tmSearch) {
             // search all TM entries
-            ArrayList tmList = CommandThread.core.getTransMemory();
-            for (i = 0; i < tmList.size(); i++) {
-                TransMemory tm = (TransMemory) tmList.get(i);
+            for (TransMemory tm : Core.getProject().getTransMemory()) {
                 String srcText = tm.source;
                 String locText = tm.target;
 
@@ -320,20 +326,16 @@ public class SearchThread extends Thread
 
     private void searchFiles() throws IOException, TranslationException
     {
-        int i;
-        int j;
-        
-        ArrayList fileList = new ArrayList(256);
+        List<String> fileList = new ArrayList<String>(256);
         if (!m_searchDir.endsWith(File.separator))
             m_searchDir += File.separator;
         StaticUtils.buildFileList(fileList, new File(m_searchDir), m_searchRecursive);
         
         FilterMaster fm = FilterMaster.getInstance();
-        Set processedFiles = new HashSet();
+        Set<File> processedFiles = new HashSet<File>();
         
-        for (i=0; i<fileList.size(); i++)
+        for (String filename :  fileList)
         {
-            String filename = (String) fileList.get(i);
             File file = new File(filename);
             if (processedFiles.contains(file))
                 continue;
@@ -344,7 +346,16 @@ public class SearchThread extends Thread
             // don't bother to tell handler what we're looking for -
             //	the search data is already known here (and the
             //	handler is in the same thread, so info is not volatile)
-            fm.searchFile(filename, this, processedFiles);
+            fm.loadFile(filename, processedFiles, new ParseEntry(Core
+                    .getProject().getProjectProperties()) {                
+                protected String processSingleEntry(String src) {
+                    searchText(src);
+                    return src;
+                }
+
+                public void addLegacyTMXEntry(String source, String translation) {
+                }
+            });
         }
     }
     
@@ -361,14 +372,11 @@ public class SearchThread extends Thread
       * @author Henry Pijffers (henry.pijffers@saxnot.com)
       */
     private boolean searchString(String text) {
-        if (text == null || m_matchers == null || m_matchers.size() == 0)
+        if (text == null || m_matchers == null || m_matchers.isEmpty())
             return false;
 
         // check the text against all matchers
-        for (int i = 0; i < m_matchers.size(); i++) {
-            // get the next matcher
-            Matcher matcher = (Matcher)m_matchers.get(i);
-
+        for (Matcher matcher : m_matchers) {
             // check the text against the current matcher
             // if one of the search strings is not found, don't
             // bother looking for the rest of the search strings
@@ -402,13 +410,11 @@ public class SearchThread extends Thread
     private boolean   m_searchRecursive;
     private String    m_curFileName;
     private boolean   m_tmSearch;
-    private HashSet   m_entrySet; // HP: keeps track of previous results, to avoid duplicate entries
-    private ArrayList m_matchers; // HP: contains a matcher for each search string
+    private boolean   m_allResults;
+    private Set<String>   m_entrySet; // HP: keeps track of previous results, to avoid duplicate entries
+    private List<Matcher> m_matchers; // HP: contains a matcher for each search string
                                   //     (multiple if keyword search)
 
     private int m_numFinds;
-
-    private ArrayList m_extList;
-    private ArrayList m_extMapList;
 }
 

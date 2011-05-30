@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -25,7 +25,6 @@
 package org.omegat.util.xml;
 
 import java.util.HashMap;
-import org.omegat.util.StaticUtils;
 
 /**
  * Entity filter for XML.
@@ -39,13 +38,13 @@ import org.omegat.util.StaticUtils;
 public class DefaultEntityFilter
 {
     
-    private static HashMap	m_charMap;
-    private static HashMap	m_escMap;
+    private static HashMap<Character,String>	m_charMap;
+    private static HashMap<String,Character>	m_escMap;
     
     static
     {
-        m_escMap = new HashMap(512);
-        m_charMap = new HashMap(512);
+        m_escMap = new HashMap<String, Character>(512);
+        m_charMap = new HashMap<Character, String>(512);
         
         addMapEntry('\'', "apos");		     // NOI18N
         addMapEntry('"', "quot");            // NOI18N
@@ -314,7 +313,7 @@ public class DefaultEntityFilter
      */
 	public String convertToEntity(char c)
     {
-        String s = (String) m_charMap.get(new Character(c));
+        String s = m_charMap.get(c);
         if (s != null)
         {
             return "&" + s + ";";	 // NOI18N
@@ -328,7 +327,7 @@ public class DefaultEntityFilter
      */
 	public char convertToSymbol(String escapeSequence)
     {
-        Character c = (Character) m_escMap.get(escapeSequence);
+        Character c = m_escMap.get(escapeSequence);
         if (c == null)
         {
             try

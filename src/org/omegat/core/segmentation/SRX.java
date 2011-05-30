@@ -4,7 +4,8 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               2008 Alex Buloichik
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -24,23 +25,26 @@
 
 package org.omegat.core.segmentation;
 
+import gen.core.segmentation.Languagemap;
+import gen.core.segmentation.Languagerule;
+import gen.core.segmentation.Srx;
+
 import java.beans.ExceptionListener;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.Serializable;
+import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
 import javax.swing.JOptionPane;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 
 import org.omegat.util.Language;
 import org.omegat.util.Log;
@@ -62,7 +66,26 @@ public class SRX implements Serializable, Cloneable
     private static final String CONF_SENTSEG = "segmentation.conf";             // NOI18N
     private static final File configFile=new File(
             StaticUtils.getConfigDir()+CONF_SENTSEG);
+    
+    /** Context for JAXB rules processing. */
+    protected static final JAXBContext SRX_JAXB_CONTEXT;
             
+    static {
+        try {
+            SRX_JAXB_CONTEXT = JAXBContext.newInstance(Srx.class);
+        }catch(LinkageError ex ) {
+            throw new ExceptionInInitializerError(OStrings.getString("STARTUP_JAXB_LINKAGE_ERROR"));
+        } catch (JAXBException ex) {
+            if (ex.getMessage()!=null) {
+                throw new ExceptionInInitializerError(ex.getMessage());                
+            }
+            if (ex.getCause()!=null) {
+                throw new ExceptionInInitializerError(ex.getCause().getClass().getName()+": "+ex.getCause().getMessage());
+            }
+            throw new ExceptionInInitializerError(ex.getClass().getName());
+        }
+    }
+    
     /**
      * SRX factory method.
      * <p>
@@ -149,11 +172,10 @@ public class SRX implements Serializable, Cloneable
             if( myel.isExceptionOccured() )
             {
                 StringBuffer sb = new StringBuffer();
-                List exceptions = myel.getExceptionsList();
-                for(int i=0; i<exceptions.size(); i++)
+                for(Exception ex : myel.getExceptionsList())
                 {
                     sb.append("    ");                                          // NOI18N
-                    sb.append(exceptions.get(i));
+                    sb.append(ex);
                     sb.append("\n");                                            // NOI18N
                 }
                 Log.logErrorRB(
@@ -195,7 +217,7 @@ public class SRX implements Serializable, Cloneable
         int defaultMapRulesN = defaults.getMappingRules().size();
         for (int i=0; i<defaultMapRulesN; i++)
         {
-            MapRule dmaprule = (MapRule)defaults.getMappingRules().get(i);
+            MapRule dmaprule = defaults.getMappingRules().get(i);
             String dcode = dmaprule.getLanguageCode();
             // trying to find
             boolean found = false;
@@ -203,7 +225,7 @@ public class SRX implements Serializable, Cloneable
             MapRule cmaprule = null;
             for (int j=0; j<currentMapRulesN; j++)
             {
-                cmaprule = (MapRule)current.getMappingRules().get(j);
+                cmaprule = current.getMappingRules().get(j);
                 String ccode = cmaprule.getLanguageCode();
                 if (dcode.equals(ccode)) 
                 {
@@ -215,11 +237,10 @@ public class SRX implements Serializable, Cloneable
             if (found)
             {
                 // merging -- adding those rules not there in current list
-                List crules = cmaprule.getRules();
-                List drules = dmaprule.getRules();
-                for (int j=0; j<drules.size(); j++)
+                List<Rule> crules = cmaprule.getRules();
+                List<Rule> drules = dmaprule.getRules();
+                for (Rule drule : drules)
                 {
-                    Rule drule = (Rule)drules.get(j);
                     if (!crules.contains(drule))
                     {
                         if (drule.isBreakRule())
@@ -234,7 +255,7 @@ public class SRX implements Serializable, Cloneable
                             int firstBreakRuleN = currentRulesN;
                             for (int k=0; k<currentRulesN; k++)
                             {
-                                Rule crule = (Rule)crules.get(k);
+                                Rule crule = crules.get(k);
                                 if (crule.isBreakRule())
                                 {
                                     firstBreakRuleN = k;
@@ -252,7 +273,7 @@ public class SRX implements Serializable, Cloneable
                 int englishN = currentMapRulesN;
                 for (int j=0; j<currentMapRulesN; j++)
                 {
-                    cmaprule = (MapRule)current.getMappingRules().get(j);
+                    cmaprule = current.getMappingRules().get(j);
                     String cpattern = cmaprule.getPattern();
                     if (DEFAULT_RULES_PATTERN.equals(cpattern))
                     {
@@ -276,17 +297,35 @@ public class SRX implements Serializable, Cloneable
             String DEF = "Default (English)";                                   // NOI18N
             for(int i=0; i<current.getMappingRules().size(); i++)
             {
-                MapRule maprule = (MapRule)current.getMappingRules().get(i);
+                MapRule maprule = current.getMappingRules().get(i);
                 if( DEF.equals(maprule.getLanguageCode()) )
                 {
                     maprule.setLanguage(LanguageCodes.DEFAULT_CODE);
-                    maprule.getRules().removeAll(DefaultRules.english());
-                    maprule.getRules().removeAll(DefaultRules.textFormat());
-                    maprule.getRules().removeAll(DefaultRules.htmlFormat());
+                    maprule.getRules().removeAll(getRulesForLanguage(defaults, LanguageCodes.ENGLISH_CODE));
+                    maprule.getRules().removeAll(getRulesForLanguage(defaults, LanguageCodes.F_TEXT_CODE));
+                    maprule.getRules().removeAll(getRulesForLanguage(defaults, LanguageCodes.F_HTML_CODE));
                 }
             }
         }
         return current;
+    }
+    
+    /**
+     * Find rules for specific language.
+     * 
+     * @param source
+     *            rules list
+     * @param langName
+     *            language name
+     * @return list of rules
+     */
+    private static List<Rule> getRulesForLanguage(final SRX source, String langName) {
+        for (MapRule mr : source.getMappingRules()) {
+            if (langName.equals(mr.getLanguageCode())) {
+                return mr.getRules();
+            }
+        }
+        return null;
     }
     
     /**
@@ -295,7 +334,7 @@ public class SRX implements Serializable, Cloneable
      */
     static class MyExceptionListener implements ExceptionListener
     {
-        private List exceptionsList = new ArrayList();
+        private List<Exception> exceptionsList = new ArrayList<Exception>();
         private boolean exceptionOccured = false;
         public void exceptionThrown(Exception e)
         {
@@ -313,7 +352,7 @@ public class SRX implements Serializable, Cloneable
         /**
          * Returns the list of occured exceptions.
          */
-        public List getExceptionsList()
+        public List<Exception> getExceptionsList()
         {
             return exceptionsList;
         }
@@ -321,61 +360,41 @@ public class SRX implements Serializable, Cloneable
 
     // Patterns
     private static final String DEFAULT_RULES_PATTERN = ".*";                   // NOI18N
-    private static final String ENGLISH_RULES_PATTERN = "EN.*";                 // NOI18N
-    private static final String JAPANESE_RULES_PATTERN = "JA.*";                // NOI18N
-    private static final String RUSSIAN_RULES_PATTERN = "RU.*";                 // NOI18N
-    private static final String GERMAN_RULES_PATTERN = "DE.*";                  // NOI18N
     
     /**
      * Initializes default rules.
      */
-    private void initDefaults()
-    {
-        List srules;
+    private void initDefaults() {
+        try {
+            List<MapRule> newMap=new ArrayList<MapRule>();
+            URL rulesUrl = this.getClass().getResource("defaultRules.xml");
+            Srx data = (Srx) SRX_JAXB_CONTEXT.createUnmarshaller().unmarshal(rulesUrl);
 
-        // Extensive set of German exceptions
-        getMappingRules().add(new MapRule(
-                LanguageCodes.GERMAN_CODE,
-                GERMAN_RULES_PATTERN, 
-                DefaultRules.german()));
-        
-        // Russian as an example
-        getMappingRules().add(new MapRule(
-                LanguageCodes.RUSSIAN_CODE,
-                RUSSIAN_RULES_PATTERN, 
-                DefaultRules.russian()));
-        
-        // now Japanese
-        getMappingRules().add(new MapRule(
-                LanguageCodes.JAPANESE_CODE,
-                JAPANESE_RULES_PATTERN, 
-                DefaultRules.japanese()));
+            for (Languagerule rules : data.getBody().getLanguagerules().getLanguagerule()) {
 
-        // now English
-        getMappingRules().add(new MapRule(
-                LanguageCodes.ENGLISH_CODE,
-                ENGLISH_RULES_PATTERN, 
-                DefaultRules.english()));
+                String lang = rules.getLanguagerulename();
+                String pattern = DEFAULT_RULES_PATTERN;
+                for (Languagemap lm : data.getBody().getMaprules().getLanguagemap()) {
+                    if (lm.getLanguagerulename().equals(rules.getLanguagerulename())) {
+                        pattern = lm.getLanguagepattern();
+                        break;
+                    }
+                }
+                List<Rule> rulesList = new ArrayList<Rule>(rules.getRule().size());
+                for (gen.core.segmentation.Rule r : rules.getRule()) {
+                    boolean isBreak = "yes".equalsIgnoreCase(r.getBreak());
+                    rulesList.add(new Rule(isBreak, r.getBeforebreak().getContent(), r.getAfterbreak().getContent()));
+                }
 
-        // default lingual rules
-        getMappingRules().add(new MapRule(
-                LanguageCodes.DEFAULT_CODE,
-                DEFAULT_RULES_PATTERN, 
-                DefaultRules.defaultLingual()));
-
-        // segmentation for text files
-        getMappingRules().add(new MapRule(
-                LanguageCodes.F_TEXT_CODE,
-                DEFAULT_RULES_PATTERN, 
-                DefaultRules.textFormat()));
-
-        // segmentation for (X)HTML files
-        getMappingRules().add(new MapRule(
-                LanguageCodes.F_HTML_CODE,
-                DEFAULT_RULES_PATTERN, 
-                DefaultRules.htmlFormat()));
+                newMap.add(new MapRule(lang, pattern, rulesList));
+            }
+            // set rules only if no errors
+            getMappingRules().addAll(newMap);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
-        
+    
     /**
      * Finds the rules for a certain language.
      * <p>
@@ -385,12 +404,12 @@ public class SRX implements Serializable, Cloneable
      * <p>
      * Or in case of a completely screwd setup -- an empty list without any rules.
      */
-    public List lookupRulesForLanguage(Language srclang)
+    public List<Rule> lookupRulesForLanguage(Language srclang)
     {
-        List rules = new ArrayList();
+        List<Rule> rules = new ArrayList<Rule>();
         for(int i=0; i<getMappingRules().size(); i++)
         {
-            MapRule maprule = (MapRule)getMappingRules().get(i);
+            MapRule maprule = getMappingRules().get(i);
             if( maprule.getCompiledPattern().matcher(srclang.getLanguage()).matches() )
                 rules.addAll(maprule.getRules());
         }
@@ -498,13 +517,13 @@ public class SRX implements Serializable, Cloneable
      * Correspondences between languages and their segmentation rules. 
      * Each element is of class {@link MapRule}. 
      */
-    private List mappingRules = new ArrayList();
+    private List<MapRule> mappingRules = new ArrayList<MapRule>();
 
     /**
      * Returns all mapping rules (of class {@link MapRule}) at once: 
      * correspondences between languages and their segmentation rules.
      */
-    public List getMappingRules()
+    public List<MapRule> getMappingRules()
     {
         return mappingRules;
     }
@@ -513,7 +532,7 @@ public class SRX implements Serializable, Cloneable
      * Sets all mapping rules (of class {@link MapRule}) at once: 
      * correspondences between languages and their segmentation rules.
      */
-    public void setMappingRules(List rules)
+    public void setMappingRules(List<MapRule> rules)
     {
         mappingRules = rules;
     }

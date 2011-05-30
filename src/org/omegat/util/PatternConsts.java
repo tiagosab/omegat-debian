@@ -4,9 +4,10 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-           (C) 2007 Didier Briel
- Portions copyright 2007 - Zoltan Bartko - bartkozoltan@bartkozoltan.com
-               Home page: http://www.omegat.org/omegat/omegat.html
+               2007 Didier Briel, Zoltan Bartko
+               2008 Martin Fleurke
+               2009 Didier Briel
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -29,10 +30,12 @@ package org.omegat.util;
 import java.util.regex.Pattern;
 
 /**
- * Constant patterns, used in dirrerent other classes.
+ * Constant patterns, used in different other classes.
  *
  * @author Maxym Mykhalchuk
  * @author Didier Briel
+ * @author Zoltan Bartko (bartkozoltan@bartkozoltan.com)
+ * @author Martin Fleurke
  */
 public class PatternConsts
 {
@@ -81,6 +84,10 @@ public class PatternConsts
     public static final Pattern HTML_HTML = Pattern.compile(
             "<html.*?>",                                                            // NOI18N
             Pattern.CASE_INSENSITIVE);
+
+    /** Pattern for detecting html &ltBR&gt; tags */
+    public static final Pattern HTML_BR = Pattern.compile(
+            "<BR>", Pattern.CASE_INSENSITIVE);
     
     /**
      * Pattern that matches full string containing in full and only
@@ -129,5 +136,35 @@ public class PatternConsts
     
     /** Pattern for detecting remote dictionary file archives */
     public static final Pattern DICTIONARY_ZIP = Pattern.compile(
-            "\"([a-z]{1,8})(_([A-Z]{1,8})?)?\\.zip\"");
+//          "\"([a-z]{1,8})(_([A-Z]{1,8})?)?\\.zip\"");
+            // Hardcoded pattern to get the French dictionary
+            // (fr_FR_1-3-2.zip) in addition to the others
+            // The initial pattern is above.
+            // [ 2138846 ] French dictionary cannot be downloaded and installed
+            "\"([a-z]{1,8})(_([A-Z]{1,8})?)(_1-3-2)?\\.zip\"");
+    
+    /** Pattern for detecting the placeholders in a printf-function string
+     *  which can occur in languages like php, C and others. 
+     *  placeholder ::= [ARGUMENTSWAPSPECIFIER] [SIGNSPECIFIER] [PADDINGSPECIFIER] [ALIGNMENTSPECIFIER] [WIDTHSPECIFIER] [PRECISIONSPECIFIER] TYPESPECIFIER
+     *  NUMBER ::= { "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" }
+     *  ARGUMENTSWAPSPECIFIER = NUMBER "$"
+     *  SIGNSPECIFIER ::= "+" | "-"
+     *  PADDINGSPECIFIER ::= " " | "0" | "'" CHARACTER
+     *  ALIGNMENTSPECIFIER ::= "" | "-"
+     *  WIDTHSPECIFIER ::= NUMBER
+     *  PRECISIONSPECIFIER ::= "." NUMBER
+     *  TYPESPECIFIER ::= "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "i" | "n" | "o" | "p" | "s" | "u" | "x" | "X" | "%"
+     *  //c++: [cdieEfgGosuxXpn%]
+     *  //php: [bcdeufFosxX%]
+     *  NB: Because having space as paddingspecifier leads to many false matches 
+     *  in regular text, and space being the default padding specifier in php, 
+     *  and being able to have space or 0 as padding specifier by prefixing it 
+     *  with ', and having the padding specifier not being used frequently in 
+     *  most cases, the regular expression only corresponds with quote+paddingspecifier. 
+     *  NB2: The argument swap specifier gives explicit ordering of variables, 
+     *  without it, the ordering is implicit (first in sequence is first in order)
+     *  Example in code: <code>echo printf(gettext("%s is very %s"), "OmegaT", "great");</code>*/
+    public static final Pattern PRINTF_VARS = Pattern.compile(
+            "%([1-9]+\\$)?([+-])?('.)?(-)?([0-9]*)(\\.[0-9]*)?[bcdeEfFgGinopsuxX%]", Pattern.CASE_INSENSITIVE);
+
 }

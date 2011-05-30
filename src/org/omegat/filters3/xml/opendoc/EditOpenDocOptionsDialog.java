@@ -4,8 +4,8 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               2007 Didier Briel
-               Home page: http://www.omegat.org/omegat/omegat.html
+               2007-2009 Didier Briel
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -53,14 +53,14 @@ public class EditOpenDocOptionsDialog extends javax.swing.JDialog
         super(parent, true);
         this.options = options;
         initComponents();
-        if (options!=null)
-        {
-            translateIndexesCB.setSelected(options.getTranslateIndexes());
-            translateBookmarksCB.setSelected(options.getTranslateBookmarks());
-            translateBookmarkRefsCB.setSelected(options.getTranslateBookmarkRefs());
-            translateNotesCB.setSelected(options.getTranslateNotes());
-            translateCommentsCB.setSelected(options.getTranslateComments());           
-        }
+        if (options==null)
+            options = new OpenDocOptions(); // Set default options
+        
+        translateIndexesCB.setSelected(options.getTranslateIndexes());
+        translateBookmarksCB.setSelected(options.getTranslateBookmarks());
+        translateBookmarkRefsCB.setSelected(options.getTranslateBookmarkRefs());
+        translateNotesCB.setSelected(options.getTranslateNotes());
+        translateCommentsCB.setSelected(options.getTranslateComments());
         
         //  Handle escape key to close the window
         KeyStroke escape = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false);

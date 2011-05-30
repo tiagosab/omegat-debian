@@ -3,8 +3,9 @@
           with fuzzy matching, translation memory, keyword search, 
           glossaries, and translation leveraging into updated projects.
 
- Copyright (C) 2007 - Zoltan Bartko - bartkozoltan@bartkozoltan.com
-               Home page: http://www.omegat.org/omegat/omegat.html
+ Copyright (C) 2007 Zoltan Bartko
+               2009 Didier Briel
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -25,16 +26,15 @@
 package org.omegat.core.spellchecker;
 
 import com.sun.jna.Library;
-import com.sun.jna.Native;
 import com.sun.jna.Pointer;
-import com.sun.jna.Structure;
 import com.sun.jna.ptr.PointerByReference;
 
 /**
  * An interface with the Hunspell (http://hunspell.sourceforge.net)
  * spell checking library.
  *
- * @author bartkoz
+ * @author Zoltan Bartko bartkozoltan@bartkozoltan.com
+ * @author Didier Briel
  */
 public interface Hunspell extends Library {
     
@@ -74,6 +74,12 @@ public interface Hunspell extends Library {
     /**
      * put a word into the custom dictionary
      */
-    public int Hunspell_put_word(Pointer pHunspell, byte[] word);
-    
+    public int Hunspell_put_word(Pointer pHunspell, byte[] word);    
+    /**
+     * put a word into the custom dictionary
+     * same function as put_word, renamed as of Hunspell 1.2
+     * (01/11/2007)
+     */  
+    public int Hunspell_add(Pointer pHunspell, byte[] word);
+        
 }

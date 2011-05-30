@@ -6,6 +6,7 @@
  Copyright (C) 2000-2006 Keith Godfrey, Maxym Mykhalchuk, and Henry Pijffers
                2007 Didier Briel, Zoltan Bartko, Alex Buloichik 
                2008 Didier Briel
+               2009 Didier Briel
                Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
@@ -26,22 +27,20 @@
 
 package org.omegat.util;
 
-import java.io.File;
 import java.awt.GraphicsEnvironment;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
-import java.text.BreakIterator;
-import java.text.MessageFormat;
-import java.util.List;
-import java.lang.reflect.Array;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
+import java.text.MessageFormat;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.*;
@@ -73,17 +72,29 @@ public class StaticUtils
 	 * Configuration directory on Mac OS X
 	 */
 	private final static String OSX_CONFIG_DIR = "/Library/Preferences/OmegaT/";// NOI18N
-	
+
+  	/**
+	 * Script directory
+	 */
+	private final static String SCRIPT_DIR = "script";                          // NOI18N
+
 	/**
 	 * Contains the location of the directory containing the configuration files.
 	 */
 	private static String m_configDir = null;
+
+	/**
+	 * Contains the location of the script dir containing the
+     * exported text files.
+	 */
+	private static String m_scriptDir = null;
+
     
     /**
      * Builds a list of format tags within the supplied string.
      * Format tags are OmegaT style tags: &lt;xx02&gt; or &lt;/yy01&gt;.
      */
-    public static void buildTagList(String str, ArrayList tagList)
+    public static void buildTagList(String str, List<String> tagList)
     {
         // The code is nearly the same as in listShortTags in Entry.java
         final int STATE_NORMAL = 1;
@@ -121,10 +132,9 @@ public class StaticUtils
      * Returns a list of all files under the root directory
      * by absolute path.
      */
-    public static void buildFileList(ArrayList lst, File rootDir,
+    public static void buildFileList(List<String> lst, File rootDir,
             boolean recursive)
     {
-        int i;
         // read all files in current directory, recurse into subdirs
         // append files to supplied list
         File flist[] = null;
@@ -142,22 +152,22 @@ public class StaticUtils
         if( flist==null )
             return;
         
-        for (i=0; i<Array.getLength(flist); i++)
+        for (File file : flist)
         {
-            if (flist[i].isDirectory())           
+            if (file.isDirectory())
             {
                 continue;	// recurse into directories later
             }
-            lst.add(flist[i].getAbsolutePath());
+            lst.add(file.getAbsolutePath());
         }
         if (recursive)
         {
-            for (i=0; i<Array.getLength(flist); i++)
+            for (File file : flist)
             {
-                if ( isProperDirectory(flist[i]) ) // Ignores some directories
+                if ( isProperDirectory(file) ) // Ignores some directories
                 {
                     // now recurse into subdirectories
-                    buildFileList(lst, flist[i], true);
+                    buildFileList(lst, file, true);
                 }
             }
         }
@@ -165,144 +175,22 @@ public class StaticUtils
     
     // returns a list of all files under the root directory
     //  by absolute path
-    public static void buildDirList(ArrayList lst, File rootDir)
+    public static void buildDirList(List<String> lst, File rootDir)
     {
-        int i;
         // read all files in current directory, recurse into subdirs
         // append files to supplied list
         File [] flist = rootDir.listFiles();
-        for (i=0; i<Array.getLength(flist); i++)
+        for (File file : flist)
         {
-            if ( isProperDirectory(flist[i]) ) // Ignores some directories
+            if ( isProperDirectory(file) ) // Ignores some directories
             {
                 // now recurse into subdirectories
-                lst.add(flist[i].getAbsolutePath());
-                buildDirList(lst, flist[i]);
+                lst.add(file.getAbsolutePath());
+                buildDirList(lst, file);
             }
         }
     }
     
-    private static BreakIterator wordBreaker = null;
-    /** Returns an iterator to break sentences into words. */
-    public static BreakIterator getWordBreaker()
-    {
-        //if (wordBreaker==null)
-        //    wordBreaker = new WordIterator();
-        //return wordBreaker;
-
-        return new WordIterator();
-
-        // HP: This is a fix for bug 1589484. If you use only one
-        // WordIterator instance, it will lead to problems when
-        // using multiple threads, as OmegaT does. Sometimes, in
-        // the middle of breaking a string, another thread may set
-        // a different text, and then you get index out of bounds
-        // exceptions. By returning a new WordIterator each time
-        // one is requested, this problem is solved, and it doesn't
-        // hurt performance either.
-    }
-
-    /**
-      * Contains a list of tokens for each *unique* string.
-      * By not storing a list of tokens for every string,
-      * memory is saved. Token lists are not saved when
-      * all tokens are requested. Again to save memory.
-      */
-    private static java.util.Map tokenCache = new java.util.Hashtable();
-
-    /** Removes all token lists from the cache. */
-    public static void clearTokenCache() {
-        tokenCache.clear();
-    }
-
-    /**
-      * Breaks a string into tokens.
-      * <p>
-      * Examples:
-      * <ul>
-      * <li> This is a semi-good way. -> "this", "is", "a", "semi-good", "way"
-      * <li> Fine, thanks, and you? -> "fine", "thanks", "and", "you"
-      * <li> C&all this action -> "call", "this", "action" ('&' is eaten)
-      * </ul>
-      * <p>
-      * Also skips OmegaT tags.
-      *
-      * @param str string to tokenize
-      * @return List of all tokens (words only)
-      */
-    public static List tokenizeText(String str) {
-        return tokenizeText(str, false);
-    }
-
-    /**
-      * Breaks a string into tokens.
-      * <p>
-      * Examples:
-      * <ul>
-      * <li> This is a semi-good way. -> "this", "is", "a", "semi-good", "way"
-      * <li> Fine, thanks, and you? -> "fine", "thanks", "and", "you"
-      * <li> C&all this action -> "call", "this", "action" ('&' is eaten)
-      * </ul>
-      * <p>
-      * OmegaT tags and other non-word tokens are skipped if the parameter "all" is false.
-      *
-      * @param str string to tokenize
-      * @param all If true, numbers, tags, and other non-word tokens are included in the list
-      * @return List of tokens (all)
-      */
-    public static List tokenizeText(String str, boolean all) {
-        // check if we've already tokenized this string
-        // no sense in retokenizing identical strings
-        // don't check if the caller wants all tokens
-        List tokens = null;
-        if (!all) {
-            tokens = (List)tokenCache.get(str);
-            if (tokens != null)
-                return tokens;
-        }
-
-        // create a new token list
-        // and put it in the cache if not all tokens are requested
-        tokens = new ArrayList();
-        if (!all)
-            tokenCache.put(str, tokens);
-
-        // fixes bug nr. 1382810 (StringIndexOutOfBoundsException)
-        if (str.length() == 0)
-            return tokens;
-
-        // get a word breaker
-        str = str.toLowerCase(); // HP: possible error, this makes "A" and "a" match, CHECK AND FIX
-        BreakIterator breaker = getWordBreaker();
-        breaker.setText(str);
-
-        int start = breaker.first();
-        for (int end = breaker.next();
-             end!=BreakIterator.DONE; 
-             start = end, end = breaker.next())
-        {
-            String tokenStr = str.substring(start,end);
-            boolean word = false;
-            for (int i=0; i<tokenStr.length(); i++)
-            {
-                char ch = tokenStr.charAt(i);
-                if (Character.isLetter(ch))
-                {
-                    word = true;
-                    break;
-                }
-            }
-
-            if (all || (word && !PatternConsts.OMEGAT_TAG.matcher(tokenStr).matches()))
-            {
-                Token token = new Token(tokenStr, start);
-                tokens.add(token);
-            }
-        }
-
-        return tokens;
-    }
-
     /**
      * Returns the names of all font families available.
      */
@@ -313,17 +201,6 @@ public class StaticUtils
         return graphics.getAvailableFontFamilyNames();
     }
     
-    /**
-     * Tests, whether one list of tokens is fully contained (is-a subset)
-     * in other list of tokens
-     */
-    public static boolean isSubset(List maybeSubset, List maybeSuperset)
-    {
-        for(int i=0; i<maybeSubset.size(); i++)
-            if( !maybeSuperset.contains(maybeSubset.get(i)) )
-                return false;
-        return true;
-    }
    
     // List of CVS or SVN folders
     private static final String CVS_SVN_FOLDERS = "(CVS)|(.svn)|(_svn)";        // NOI18N
@@ -513,6 +390,13 @@ public class StaticUtils
         // if the configuration directory has already been determined, return it
         if (m_configDir != null)
             return m_configDir;
+
+        String cd = RuntimePreferences.getConfigDir();
+        if (cd != null) {
+            // use the forced specified directory
+            m_configDir = new File(cd).getAbsolutePath() + File.separator;
+            return m_configDir;
+        }
         
         String os;   // name of operating system
         String home; // user home directory
@@ -642,7 +526,41 @@ public class StaticUtils
         // we should have a correct, existing config dir now
         return m_configDir;
     }
-    
+
+    public static String getScriptDir() {
+        // If the script directory has already been determined, return it
+        if (m_scriptDir != null)
+            return m_scriptDir;
+
+        m_scriptDir = getConfigDir() + SCRIPT_DIR + File.separator;
+
+       try {
+           // Check if the directory exists
+           File dir = new File(m_scriptDir);
+           if (!dir.exists()) {
+               // Create the directory
+               boolean created = dir.mkdirs();
+
+               // If the directory could not be created,
+               // set the script directory to config directory
+               if (!created) {
+                   Log.logErrorRB("SU_SCRIPT_DIR_CREATE_ERROR");
+                   m_scriptDir = getConfigDir();
+               }
+            }
+        }
+        catch (SecurityException e) {
+            //The system doesn't want us to write where we want to write
+            // reset the script dir to the current config dir
+            m_scriptDir = getConfigDir();
+
+            // log the exception, but only after the script dir has been reset
+            Log.logErrorRB("SU_SCRIPT_DIR_CREATE_ERROR");
+            Log.log(e.toString());
+        }
+        return m_scriptDir;
+    }
+
     /**
       * Returns true if running on Mac OS X
       */
@@ -821,7 +739,7 @@ public class StaticUtils
       *
       * @author Henry Pijffers (henry.pijffers@saxnot.com)
       */
-    public static String format(String str, Object[] arguments) {
+    public static String format(String str, Object... arguments) {
         // MessageFormat.format expects single quotes to be escaped
         // by duplicating them, otherwise the string will not be formatted
         str = str.replaceAll("'", "''");
@@ -860,7 +778,6 @@ public class StaticUtils
         URLConnection urlConn = null;
         InputStream in = null;
         OutputStream out = null;
-        StringBuffer sb = new StringBuffer();
         try {
             URL url = new URL(address);
             urlConn = url.openConnection();
@@ -891,15 +808,15 @@ public class StaticUtils
         }
     }
 
-    public static void extractFileFromJar(String archive, ArrayList filenames,
+    public static void extractFileFromJar(String archive, List<String> filenames,
             String destination) throws IOException {
         // open the jar (zip) file
         JarFile jar = new JarFile(archive);
         
         // parse the entries
-        java.util.Enumeration entryEnum = jar.entries();
+        Enumeration<JarEntry> entryEnum = jar.entries();
         while (entryEnum.hasMoreElements()) {
-            JarEntry file = (JarEntry) entryEnum.nextElement();
+            JarEntry file = entryEnum.nextElement();
             if (filenames.contains(file.getName())) {
                 // match found
                 File f = new File(destination + File.separator + file.getName());

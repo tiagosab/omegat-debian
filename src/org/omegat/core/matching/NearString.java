@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -24,32 +24,33 @@
 
 package org.omegat.core.matching;
 
-import org.omegat.core.*;
+import org.omegat.core.data.StringEntry;
 
 /**
  * Class to hold a single fuzzy match.
  *
  * @author Keith Godfrey
  */
-public class NearString implements Comparable
+public class NearString implements Comparable<NearString>
 {
     public NearString(StringEntry strEntry,
             int nearScore,
+            int nearScoreNoStem,
             int adjustedScore,
             byte[] nearData,
             String projName)
     {
         str = strEntry;
         score = nearScore;
+        scoreNoStem = nearScoreNoStem;
         this.adjustedScore = adjustedScore;
         attr = nearData;
         if (projName != null)
             proj = projName;
     }
     
-    public int compareTo(Object object)
+    public int compareTo(NearString o)
     {
-        NearString o = (NearString)object;
         if (o.score == score)
             return (o.adjustedScore < adjustedScore) ? -1 : 1;
         else
@@ -57,7 +58,7 @@ public class NearString implements Comparable
     }
     
     public StringEntry str;
-    public int score; // similarity score for match without non-word tokens
+    public int score, scoreNoStem; // similarity score for match without non-word tokens
     public int adjustedScore; // adjusted similarity score for match including all tokens
     public byte[] attr;	// matching attributes of near strEntry
     public String proj = ""; // NOI18N
