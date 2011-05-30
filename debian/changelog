@@ -1,3 +1,21 @@
+omegat (1.8.1.2+dfsg-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * debian/control
+    - (Depends): Add ${misc:Depends}.
+    - (Build-Depends): Update to openjdk-6-jdk.
+    - (Homepage): Update to working URL.
+    - (Standards-Version): Update to 3.9.1.
+    - Package::omegat
+      + (Depends): Remove unsupported sun-java5-jre. Add
+        sun-java6-jre; thanks to Rolf Leggewie
+        <debian-bugs@rolf.leggewie.biz> (important; Closes: #522655).
+        Add libaccess-bridge-java-jni (Closes: #531416).
+  * debian/README.source
+    - New file.
+
+ -- Jari Aalto <jari.aalto@cante.net>  Mon, 01 Nov 2010 16:04:25 +0200
+
 omegat (1.8.1.2+dfsg-1) unstable; urgency=low
 
   [ Tiago Saboga ]
