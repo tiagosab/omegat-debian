@@ -4,6 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2008 Alex Buloichik
+               2010 Didier Briel
                Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
@@ -25,9 +26,13 @@
 package org.omegat.core.data;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import org.omegat.core.data.stat.StatisticsInfo;
+import org.omegat.core.matching.ITokenizer;
+import org.omegat.core.statistics.StatisticsInfo;
 import org.omegat.filters2.TranslationException;
 
 /**
@@ -35,6 +40,7 @@ import org.omegat.filters2.TranslationException;
  * instance of IProject.
  * 
  * @author Alex Buloichik (alex73mail@gmail.com)
+ * @author Didier Briel
  */
 public interface IProject {
 
@@ -56,7 +62,7 @@ public interface IProject {
     /**
      * Create translated documents.
      */
-    void compileProject() throws IOException, TranslationException;
+    void compileProject(String sourcePattern) throws IOException, TranslationException;
 
     /**
      * Get project properties.
@@ -78,18 +84,43 @@ public interface IProject {
     boolean isProjectModified();
 
     /**
+     * Returns tokenizer for source language.
+     */
+    ITokenizer getSourceTokenizer();
+
+    /**
+     * Returns tokenizer for target language.
+     */
+    ITokenizer getTargetTokenizer();
+
+    /**
      * Get all source segments. It's unmodifiable list, so, there is no need
      * synchronization to read it.
      */
     List<SourceTextEntry> getAllEntries();
 
     /**
-     * Set translation for entry.
+     * Set translation for entry. Use when user has typed a new translation.
      * 
-     * @param entry entry
-     * @param trans translation
+     * @param entry
+     *            entry
+     * @param trans
+     *            translation
      */
     void setTranslation(SourceTextEntry entry, String trans);
+
+    /**
+     * Set author and translation for entry. Use when user has typed a new
+     * translation.
+     * 
+     * @param author
+     *            author
+     * @param entry
+     *            entry
+     * @param trans
+     *            translation
+     */
+    void setAuthorTranslation(String author, SourceTextEntry entry, String trans);
 
     /**
      * Get statistics for project.
@@ -99,26 +130,34 @@ public interface IProject {
     StatisticsInfo getStatistics();
 
     /**
-     * Get all unique segments.
+     * Get all translations for current project.
      * 
-     * @return read-only list of project entries, or null if project not loaded
+     * @return all translations map
      */
-    List<StringEntry> getUniqueEntries();
+    Set<Map.Entry<String, TransEntry>> getTranslationsSet();
 
     /**
-     * Get TM files from /tm/*.tmx dir.
+     * Get translation for specified entry.
      * 
-     * @return read-only list of translation memories, or null if project not
-     *         loaded
+     * @param ste
+     *            source entry
+     * @return translation, or null if translation not exist
      */
-    List<LegacyTM> getMemory();
+    TransEntry getTranslation(SourceTextEntry ste);
 
     /**
-     * Entries from all /tm/*.tmx files and orphaned from project_save.tmx.
+     * Get all translation memories from /tm/ folder.
      * 
-     * @return list of additional memories
+     * @return translation memories
      */
-    List<TransMemory> getTransMemory();
+    Map<String, List<TransMemory>> getTransMemories();
+
+    /**
+     * Get orphaned segments.
+     * 
+     * @return orphaned segments
+     */
+    Map<String, TransEntry> getOrphanedSegments();
 
     /**
      * Get info about each source file in project. It's unmodifiable list, so,
@@ -128,8 +167,7 @@ public interface IProject {
 
     public static class FileInfo {
         public String filePath;
-        public int firstEntryIndex;
-        public int firstEntryIndexInGlobalList;
-        public int size;
+
+        public List<SourceTextEntry> entries = new ArrayList<SourceTextEntry>();
     }
 }

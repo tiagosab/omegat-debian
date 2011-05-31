@@ -198,16 +198,15 @@
 
   <p>OmegaT provides a powerful range of search functions. Call up the Search
   window with <code>Ctrl+F</code> and enter the word or phrase you wish to
-  search for in the "Search for" box. Alternatively, select a word or phrase in
-  the editing field (target text of the active segment) and hit
-  <code>Ctrl+F</code>. The word or phrase is entered in the "Search for" box
-  automatically in this case.</p>
+  search for in the "Search for" box. Alternatively, select a word or phrase
+  anywhere in the Editor pane and hit <code>Ctrl+F</code>. The word or phrase
+  is entered in the "Search for" box automatically in this case.</p>
 
-  <h3>Use Google translate</h3>
+  <h3>Use Google Translate</h3>
 
-  <p>In the Google translate pane, you will automatically get a suggestion for
-  the translation of the current segment. You can insert it with
-  <code>Ctrl+M</code> into the target segment.<br></p>
+  <p>In the Google Translate pane, you will automatically get a suggestion for
+  the translation of the current segment. Press
+  <code>Ctrl+M</code> and it will replace the current content of the target segment.<br></p>
 
   <p><a name="create_trans" id="create_trans"></a></p>
 
@@ -283,6 +282,16 @@
   create the translated files. Finally, you should always double-check the
   final formatting by opening the translated document in its associated viewer
   or editor.</p>
+
+  <p>In some programming languages (e.g. PHP, C) special tags are used as 
+  placeholders in strings that are used in combination with the printf-function.
+  OmegaT can detect and validate these tags if you enable it. Select 
+  <strong>Options→ Tag Validation...</strong>
+  from the menu. You can choose between simple and full validation. 
+  In simple validation only simple variants of the possible placeholder values 
+  are used. This is usefull when the source code does not contain the more 
+  expressive and complex placeholders and you get a lot of false positives.</p>
+
   <hr>
 </body>
 </html>

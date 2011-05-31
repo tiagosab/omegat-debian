@@ -27,12 +27,16 @@ package org.omegat.filters2.subtitles;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.omegat.filters2.AbstractFilter;
 import org.omegat.filters2.Instance;
 import org.omegat.filters2.TranslationException;
+import org.omegat.util.NullBufferedWriter;
 import org.omegat.util.OStrings;
+import org.omegat.util.StringUtil;
 
 /**
  * Filter for subtitles files. Format described on
@@ -48,6 +52,12 @@ public class SrtFilter extends AbstractFilter {
     enum READ_STATE {
         WAIT_TIME, WAIT_TEXT
     };
+
+    protected Map<String, String> align;
+
+    protected String key;
+    protected StringBuilder text = new StringBuilder();
+    protected BufferedWriter out;
 
     @Override
     public Instance[] getDefaultInstances() {
@@ -70,30 +80,71 @@ public class SrtFilter extends AbstractFilter {
     }
 
     @Override
-    protected void processFile(BufferedReader inFile, BufferedWriter outFile)
-            throws IOException, TranslationException {
+    protected void processFile(BufferedReader inFile, BufferedWriter outFile) throws IOException,
+            TranslationException {
+        out = outFile;
         READ_STATE state = READ_STATE.WAIT_TIME;
+        key = null;
+        text.setLength(0);
+
         String s;
-        int num = 0;
         while ((s = inFile.readLine()) != null) {
             switch (state) {
             case WAIT_TIME:
                 if (PATTERN_TIME_INTERVAL.matcher(s).matches()) {
                     state = READ_STATE.WAIT_TEXT;
                 }
+                key = s;
+                text.setLength(0);
                 outFile.write(s);
                 outFile.write(EOL);
                 break;
             case WAIT_TEXT:
                 if (s.trim().length() == 0) {
+                    flush();
+                    outFile.write(EOL);
                     state = READ_STATE.WAIT_TIME;
                 }
-                String tr = processEntry(s);
-                outFile.write(tr);
-                outFile.write(EOL);
+                if (text.length() > 0) {
+                    text.append('\n');
+                }
+                text.append(s);
                 break;
             }
-            num++;
+        }
+        flush();
+    }
+
+    private void flush() throws IOException {
+        if (text.length() == 0) {
+            return;
+        }
+
+        if (align != null) {
+            align.put(key, text.toString());
+        }
+
+        String tr = processEntry(text.toString()).replace("\n", EOL);
+        out.write(tr);
+        out.write(EOL);
+        key = null;
+        text.setLength(0);
+    }
+
+    @Override
+    protected void alignFile(BufferedReader sourceFile, BufferedReader translatedFile) throws Exception {
+        Map<String, String> source = new HashMap<String, String>();
+        Map<String, String> translated = new HashMap<String, String>();
+
+        align = source;
+        processFile(sourceFile, new NullBufferedWriter());
+        align = translated;
+        processFile(translatedFile, new NullBufferedWriter());
+        for (Map.Entry<String, String> en : source.entrySet()) {
+            String tr = translated.get(en.getKey());
+            if (!StringUtil.isEmpty(tr)) {
+                entryAlignCallback.addTranslation(en.getKey(), en.getValue(), tr, false, null, this);
+            }
         }
     }
 }

@@ -20,70 +20,70 @@
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-**************************************************************************/
+ **************************************************************************/
 
 package org.omegat.gui.filters2;
 
+import gen.core.filters.Filter;
+import gen.core.filters.Filters;
+
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;     // HP
-import java.awt.event.KeyEvent;        // HP
 import java.awt.Frame;
 import java.awt.Toolkit;
-import javax.swing.AbstractAction;     // HP
-import javax.swing.Action;             // HP
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.util.Map;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
-import javax.swing.JComponent;         // HP
 import javax.swing.JLabel;
-import javax.swing.KeyStroke;          // HP
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.omegat.filters2.IFilter;
 import org.omegat.filters2.master.FilterMaster;
-import org.omegat.filters2.master.OneFilter;
+import org.omegat.filters2.master.FiltersTableModel;
 import org.omegat.util.OStrings;
 
 /**
- * Main dialog for for setting up filters.
- * Filter is a class that allows for reading and writing a single file format.
- * OmegaT has different filters for different supported file formats.
- * E.g. HTML, OpenOffice etc.
- *
- * @author  Maxym Mykhalchuk
+ * Main dialog for for setting up filters. Filter is a class that allows for
+ * reading and writing a single file format. OmegaT has different filters for
+ * different supported file formats. E.g. HTML, OpenOffice etc.
+ * 
+ * @author Maxym Mykhalchuk
  */
-public class FiltersCustomizer extends JDialog implements ListSelectionListener
-{
-    /** A return status code - returned if Cancel button has been pressed */
-    public static final int RET_CANCEL = 0;
-    /** A return status code - returned if OK button has been pressed */
-    public static final int RET_OK = 1;
-    
+public class FiltersCustomizer extends JDialog implements ListSelectionListener {
+    private Filters config;
+    public Filters result;
+
     /** Creates new form FilterCustomizer */
-    public FiltersCustomizer(Frame parent)
-    {
+    public FiltersCustomizer(Frame parent) {
         super(parent, true);
-        
+
+        config = FilterMaster.getInstance().cloneConfig();
+
         // HP
-        //  Handle escape key to close the window
+        // Handle escape key to close the window
         KeyStroke escape = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false);
-        Action escapeAction = new AbstractAction()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
+        Action escapeAction = new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
                 dispose();
             }
         };
-        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).
-        put(escape, "ESCAPE");                                                  // NOI18N
-        getRootPane().getActionMap().put("ESCAPE", escapeAction);               // NOI18N
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escape, "ESCAPE");
+        getRootPane().getActionMap().put("ESCAPE", escapeAction);
         // END HP
-        
+
         initComponents();
-        
+
         getRootPane().setDefaultButton(okButton);
-        filtersTable.setModel(FilterMaster.getInstance().getFilters());
+        filtersTable.setModel(new FiltersTableModel(config));
         filtersTable.getSelectionModel().addListSelectionListener(this);
-        
+
         // hack for "autoresizing" the dialog
         // accomodating table dimensions
         Dimension tableSize = filtersTable.getPreferredSize();
@@ -92,41 +92,38 @@ public class FiltersCustomizer extends JDialog implements ListSelectionListener
         pack();
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         Dimension dialogSize = getSize();
-        setLocation((screenSize.width-dialogSize.width)/2,(screenSize.height-dialogSize.height)/2);
+        setLocation((screenSize.width - dialogSize.width) / 2, (screenSize.height - dialogSize.height) / 2);
     }
-    
-    public void valueChanged(ListSelectionEvent e)
-    {
-        if (e.getValueIsAdjusting()) return;
-        ListSelectionModel lsm = (ListSelectionModel)e.getSource();
-        if (lsm.isSelectionEmpty())
-        {
+
+    public void valueChanged(ListSelectionEvent e) {
+        if (e.getValueIsAdjusting())
+            return;
+        ListSelectionModel lsm = (ListSelectionModel) e.getSource();
+        if (lsm.isSelectionEmpty()) {
             editButton.setEnabled(false);
             optionsButton.setEnabled(false);
-        }
-        else
-        {
+        } else {
             editButton.setEnabled(true);
-            optionsButton.setEnabled(FilterMaster.getInstance().getFilters().
-                    getFilter(filtersTable.getSelectedRow()).hasOptions());
+            int fIdx = filtersTable.getSelectedRow();
+            Filter currFilter = config.getFilter().get(fIdx);
+            IFilter f = FilterMaster.getInstance().getFilterInstance(currFilter.getClassName());
+            optionsButton.setEnabled(f.hasOptions());
         }
     }
-    
-    
+
     /** @return the return status of this dialog - one of RET_OK or RET_CANCEL */
-    public int getReturnStatus()
-    {
-        return returnStatus;
+    public Filters getResult() {
+        return result;
     }
-    
-    /** This method is called from within the constructor to
-     * initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is
-     * always regenerated by the Form Editor.
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
      */
-    // <editor-fold defaultstate="collapsed" desc=" Generated Code ">//GEN-BEGIN:initComponents
-    private void initComponents()
-    {
+    // <editor-fold defaultstate="collapsed"
+    // desc=" Generated Code ">//GEN-BEGIN:initComponents
+    private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
         buttonPanel = new javax.swing.JPanel();
@@ -144,21 +141,18 @@ public class FiltersCustomizer extends JDialog implements ListSelectionListener
 
         setTitle(OStrings.getString("FILTERSCUSTOMIZER_TITLE"));
         setResizable(false);
-        addWindowListener(new java.awt.event.WindowAdapter()
-        {
-            public void windowClosing(java.awt.event.WindowEvent evt)
-            {
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
                 closeDialog(evt);
             }
         });
 
         buttonPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
 
-        org.openide.awt.Mnemonics.setLocalizedText(toDefaultsButton, OStrings.getString("BUTTON_TO_DEFAULTS"));
-        toDefaultsButton.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
+        org.openide.awt.Mnemonics
+                .setLocalizedText(toDefaultsButton, OStrings.getString("BUTTON_TO_DEFAULTS"));
+        toDefaultsButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 toDefaultsButtonActionPerformed(evt);
             }
         });
@@ -169,10 +163,8 @@ public class FiltersCustomizer extends JDialog implements ListSelectionListener
         buttonPanel.add(jLabel1);
 
         org.openide.awt.Mnemonics.setLocalizedText(okButton, OStrings.getString("BUTTON_OK"));
-        okButton.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
+        okButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 okButtonActionPerformed(evt);
             }
         });
@@ -180,10 +172,8 @@ public class FiltersCustomizer extends JDialog implements ListSelectionListener
         buttonPanel.add(okButton);
 
         org.openide.awt.Mnemonics.setLocalizedText(cancelButton, OStrings.getString("BUTTON_CANCEL"));
-        cancelButton.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
+        cancelButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 cancelButtonActionPerformed(evt);
             }
         });
@@ -232,10 +222,8 @@ public class FiltersCustomizer extends JDialog implements ListSelectionListener
         org.openide.awt.Mnemonics.setLocalizedText(editButton, OStrings.getString("BUTTON_EDIT"));
         editButton.setToolTipText(OStrings.getString("FILTERSCUSTOMIZER_BUTTON_EDIT_HINT"));
         editButton.setEnabled(false);
-        editButton.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
+        editButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 editButtonActionPerformed(evt);
             }
         });
@@ -248,12 +236,11 @@ public class FiltersCustomizer extends JDialog implements ListSelectionListener
         gridBagConstraints.insets = new java.awt.Insets(3, 3, 3, 3);
         getContentPane().add(editButton, gridBagConstraints);
 
-        org.openide.awt.Mnemonics.setLocalizedText(optionsButton, OStrings.getString("FILTERSCUSTOMIZER_BUTTON_OPTIONS"));
+        org.openide.awt.Mnemonics.setLocalizedText(optionsButton,
+                OStrings.getString("FILTERSCUSTOMIZER_BUTTON_OPTIONS"));
         optionsButton.setEnabled(false);
-        optionsButton.addActionListener(new java.awt.event.ActionListener()
-        {
-            public void actionPerformed(java.awt.event.ActionEvent evt)
-            {
+        optionsButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
                 optionsButtonActionPerformed(evt);
             }
         });
@@ -268,50 +255,59 @@ public class FiltersCustomizer extends JDialog implements ListSelectionListener
 
         pack();
     }
+
     // </editor-fold>//GEN-END:initComponents
 
-    private void optionsButtonActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_optionsButtonActionPerformed
-    {//GEN-HEADEREND:event_optionsButtonActionPerformed
-        OneFilter filter = FilterMaster.getInstance().getFilters().getFilter(
-                filtersTable.getSelectedRow());
-        filter.changeOptions(this);
-    }//GEN-LAST:event_optionsButtonActionPerformed
+    private void optionsButtonActionPerformed(java.awt.event.ActionEvent evt)// GEN-FIRST:event_optionsButtonActionPerformed
+    {// GEN-HEADEREND:event_optionsButtonActionPerformed
+        int fIdx = filtersTable.getSelectedRow();
+        Filter currFilter = config.getFilter().get(fIdx);
+        IFilter f = FilterMaster.getInstance().getFilterInstance(currFilter.getClassName());
 
-    private void toDefaultsButtonActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_toDefaultsButtonActionPerformed
-    {//GEN-HEADEREND:event_toDefaultsButtonActionPerformed
-        FilterMaster.getInstance().revertFiltersConfigToDefaults();
-        filtersTable.setModel(FilterMaster.getInstance().getFilters());
-    }//GEN-LAST:event_toDefaultsButtonActionPerformed
+        // new options handling
+        Map<String, String> newConfig = f.changeOptions(this, FilterMaster.forFilter(currFilter.getOption()));
+        if (newConfig != null) {
+            FilterMaster.setOptions(currFilter, newConfig);
+        }
+    }// GEN-LAST:event_optionsButtonActionPerformed
 
-    private void editButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editButtonActionPerformed
+    private void toDefaultsButtonActionPerformed(java.awt.event.ActionEvent evt)// GEN-FIRST:event_toDefaultsButtonActionPerformed
+    {// GEN-HEADEREND:event_toDefaultsButtonActionPerformed
+        config = FilterMaster.getInstance().createDefaultFiltersConfig();
+        filtersTable.setModel(new FiltersTableModel(config));
+    }// GEN-LAST:event_toDefaultsButtonActionPerformed
+
+    private void editButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_editButtonActionPerformed
         int row = filtersTable.getSelectedRow();
-        FilterEditor editor = new FilterEditor(this, FilterMaster.getInstance().getFilters(), row);
+        FilterEditor editor = new FilterEditor(this, config.getFilter().get(row));
         editor.setVisible(true);
-    }//GEN-LAST:event_editButtonActionPerformed
-    
-    private void okButtonActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_okButtonActionPerformed
+        if (editor.result != null) {
+            config.getFilter().set(row, editor.result);
+        }
+    }// GEN-LAST:event_editButtonActionPerformed
+
+    private void okButtonActionPerformed(java.awt.event.ActionEvent evt)// GEN-FIRST:event_okButtonActionPerformed
     {
-        doClose(RET_OK);
-    }//GEN-LAST:event_okButtonActionPerformed
-    
-    private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_cancelButtonActionPerformed
+        doClose(config);
+    }// GEN-LAST:event_okButtonActionPerformed
+
+    private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt)// GEN-FIRST:event_cancelButtonActionPerformed
     {
-        doClose(RET_CANCEL);
-    }//GEN-LAST:event_cancelButtonActionPerformed
-    
+        doClose(null);
+    }// GEN-LAST:event_cancelButtonActionPerformed
+
     /** Closes the dialog */
-    private void closeDialog(java.awt.event.WindowEvent evt)//GEN-FIRST:event_closeDialog
+    private void closeDialog(java.awt.event.WindowEvent evt)// GEN-FIRST:event_closeDialog
     {
-        doClose(RET_CANCEL);
-    }//GEN-LAST:event_closeDialog
-    
-    private void doClose(int retStatus)
-    {
-        returnStatus = retStatus;
+        doClose(null);
+    }// GEN-LAST:event_closeDialog
+
+    private void doClose(Filters res) {
+        result = res;
         setVisible(false);
         dispose();
     }
-    
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel buttonPanel;
     private javax.swing.JButton cancelButton;
@@ -324,6 +320,4 @@ public class FiltersCustomizer extends JDialog implements ListSelectionListener
     private javax.swing.JButton optionsButton;
     private javax.swing.JButton toDefaultsButton;
     // End of variables declaration//GEN-END:variables
-    
-    private int returnStatus = RET_CANCEL;
 }

@@ -83,23 +83,33 @@ public class DictionariesManager implements DirectoryMonitor.Callback {
             infos.remove(fn);
         }
         if (file.exists()) {
-            if (file.getName().equals("ignore.txt")) {
-                try {
+            try {
+                long st = System.currentTimeMillis();
+
+                if (file.getName().equals("ignore.txt")) {
                     loadIgnoreWords(file);
-                } catch (Exception ex) {
-                    Log.log("Error load ignore words:" + ex.getMessage());
-                }
-            } else if (fn.endsWith(".ifo")) {
-                try {
+                } else if (fn.endsWith(".ifo")) {
                     IDictionary dict = new StarDict(file);
                     Map<String, Object> header = dict.readHeader();
                     synchronized (this) {
                         infos.put(fn, new DictionaryInfo(dict, header));
                     }
-                    Log.log("Loaded dictionary from " + fn);
-                } catch (Exception ex) {
-                    Log.log("Error load dictionary: " + ex.getMessage());
+                } else if (fn.endsWith(".dsl")) {
+                    IDictionary dict = new LingvoDSL(file);
+                    Map<String, Object> header = dict.readHeader();
+                    synchronized (this) {
+                        infos.put(fn, new DictionaryInfo(dict, header));
+                    }
+                } else {
+                    fn = null;
                 }
+
+                if (fn != null) {
+                    long en = System.currentTimeMillis();
+                    Log.log("Loaded dictionary from '" + fn + "': " + (en - st) + "ms");
+                }
+            } catch (Exception ex) {
+                Log.log("Error load dictionary from '" + fn + "': " + ex.getMessage());
             }
         }
         pane.refresh();
@@ -109,8 +119,7 @@ public class DictionariesManager implements DirectoryMonitor.Callback {
      * Load ignored words from 'ignore.txt' file.
      */
     protected void loadIgnoreWords(final File f) throws IOException {
-        BufferedReader rd = new BufferedReader(new InputStreamReader(
-                new FileInputStream(f), OConsts.UTF8));
+        BufferedReader rd = new BufferedReader(new InputStreamReader(new FileInputStream(f), OConsts.UTF8));
         try {
             synchronized (ignoreWords) {
                 ignoreWords.clear();
@@ -131,8 +140,8 @@ public class DictionariesManager implements DirectoryMonitor.Callback {
         try {
             File outFile = new File(monitor.getDir(), "ignore.txt");
             File outFileTmp = new File(monitor.getDir(), "ignore.txt.new");
-            BufferedWriter wr = new BufferedWriter(new OutputStreamWriter(
-                    new FileOutputStream(outFileTmp), OConsts.UTF8));
+            BufferedWriter wr = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outFileTmp),
+                    OConsts.UTF8));
             try {
                 synchronized (ignoreWords) {
                     ignoreWords.add(word);
@@ -205,8 +214,7 @@ public class DictionariesManager implements DirectoryMonitor.Callback {
         public final IDictionary dict;
         public final Map<String, Object> info;
 
-        public DictionaryInfo(final IDictionary dict,
-                final Map<String, Object> info) {
+        public DictionaryInfo(final IDictionary dict, final Map<String, Object> info) {
             this.dict = dict;
             this.info = info;
         }

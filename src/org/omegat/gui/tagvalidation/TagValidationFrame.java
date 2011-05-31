@@ -5,7 +5,7 @@
 
  Copyright (C) 2000-2006 Keith Godfrey, Maxym Mykhalchuk, Henry Pijffers
                2007 Didier Briel
-               2008 Martin Fleurke
+               2008-2009 Martin Fleurke
                Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
@@ -22,7 +22,7 @@
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-**************************************************************************/
+ **************************************************************************/
 
 package org.omegat.gui.tagvalidation;
 
@@ -33,6 +33,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.util.List;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -47,7 +48,7 @@ import javax.swing.KeyStroke;
 import org.omegat.core.Core;
 import org.omegat.core.CoreEvents;
 import org.omegat.core.data.SourceTextEntry;
-import org.omegat.core.data.StringEntry;
+import org.omegat.core.data.TransEntry;
 import org.omegat.core.events.IFontChangedEventListener;
 import org.omegat.gui.HListener;
 import org.omegat.gui.main.MainWindow;
@@ -56,36 +57,30 @@ import org.omegat.util.PatternConsts;
 import org.omegat.util.Preferences;
 import org.openide.awt.Mnemonics;
 
-
 /**
  * A frame to display the tags with errors during tag validation.
- *
+ * 
  * @author Keith Godfrey
  * @author Henry Pijffers (henry.pijffers@saxnot.com)
  * @author Didier Briel
  * @author Martin Fleurke
  */
-public class TagValidationFrame extends JFrame
-{
-    public TagValidationFrame(MainWindow parent)
-    {
+public class TagValidationFrame extends JFrame {
+    public TagValidationFrame(MainWindow parent) {
         setTitle(OStrings.getString("TF_NOTICE_BAD_TAGS"));
-        
+
         // set window size & position
         initWindowLayout();
 
-        //  Handle escape key to close the window
+        // Handle escape key to close the window
         KeyStroke escape = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false);
-        Action escapeAction = new AbstractAction()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
+        Action escapeAction = new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
                 doCancel();
             }
         };
-        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).
-        put(escape, "ESCAPE");                                                  // NOI18N
-        getRootPane().getActionMap().put("ESCAPE", escapeAction);               // NOI18N
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escape, "ESCAPE");
+        getRootPane().getActionMap().put("ESCAPE", escapeAction);
 
         // Configure close button
         JButton closeButton = new JButton();
@@ -94,7 +89,10 @@ public class TagValidationFrame extends JFrame
 
         m_editorPane = new JEditorPane();
         m_editorPane.setEditable(false);
-        m_editorPane.addHyperlinkListener(new HListener(parent, true)); // fix for bug 1542937
+        m_editorPane.addHyperlinkListener(new HListener(parent, true)); // fix
+                                                                        // for
+                                                                        // bug
+                                                                        // 1542937
         JScrollPane scroller = new JScrollPane(m_editorPane);
 
         Box bbut = Box.createHorizontalBox();
@@ -105,32 +103,28 @@ public class TagValidationFrame extends JFrame
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(scroller, BorderLayout.CENTER);
         getContentPane().add(bbut, BorderLayout.SOUTH);
-        
-        CoreEvents
-                .registerFontChangedEventListener(new IFontChangedEventListener() {
-                    public void onFontChanged(Font newFont) {
-                        TagValidationFrame.this.setFont(newFont);
-                    }
-                });
+
+        CoreEvents.registerFontChangedEventListener(new IFontChangedEventListener() {
+            public void onFontChanged(Font newFont) {
+                TagValidationFrame.this.setFont(newFont);
+            }
+        });
         setFont(Core.getMainWindow().getApplicationFont());
     }
-    
+
     /** Call this to set OmegaT-wide font for the Tag Validation window. */
-    public void setFont(Font f)
-    {
+    public void setFont(Font f) {
         super.setFont(f);
         if (isVisible())
             update();
     }
-    
+
     /**
-      * Loads/sets the position and size of the tag validation window.
-      */
-    private void initWindowLayout()
-    {
+     * Loads/sets the position and size of the tag validation window.
+     */
+    private void initWindowLayout() {
         // main window
-        try
-        {
+        try {
             String dx = Preferences.getPreference(Preferences.TAGVWINDOW_X);
             String dy = Preferences.getPreference(Preferences.TAGVWINDOW_Y);
             int x = Integer.parseInt(dx);
@@ -141,27 +135,23 @@ public class TagValidationFrame extends JFrame
             int w = Integer.parseInt(dw);
             int h = Integer.parseInt(dh);
             setSize(w, h);
-        }
-        catch (NumberFormatException nfe)
-        {
+        } catch (NumberFormatException nfe) {
             // set default size and position
             setSize(650, 700);
         }
     }
-    
+
     /**
-      * Saves the size and position of the tag validation window
-      */
-    private void saveWindowLayout()
-    {
+     * Saves the size and position of the tag validation window
+     */
+    private void saveWindowLayout() {
         Preferences.setPreference(Preferences.TAGVWINDOW_WIDTH, getWidth());
         Preferences.setPreference(Preferences.TAGVWINDOW_HEIGHT, getHeight());
         Preferences.setPreference(Preferences.TAGVWINDOW_X, getX());
         Preferences.setPreference(Preferences.TAGVWINDOW_Y, getY());
     }
-    
-    public void processWindowEvent(WindowEvent w)
-    {
+
+    public void processWindowEvent(WindowEvent w) {
         int evt = w.getID();
         if (evt == WindowEvent.WINDOW_CLOSING || evt == WindowEvent.WINDOW_CLOSED) {
             // save window size and position
@@ -170,99 +160,97 @@ public class TagValidationFrame extends JFrame
         super.processWindowEvent(w);
     }
 
-    private void doCancel()
-    {
+    private void doCancel() {
         dispose();
     }
 
     /** replaces all &lt; and &gt; with &amp;lt; and &amp;gt; */
-    private String htmlize(String str)
-    {
+    private String htmlize(String str) {
         String htmld = str;
-        htmld = htmld.replaceAll("\\<", "&lt;");                                // NOI18N
-        htmld = htmld.replaceAll("\\>", "&gt;");                                // NOI18N
-        htmld = htmld.replaceAll("\n", "<br>");                                 // NOI18N
+        htmld = htmld.replaceAll("\\<", "&lt;");
+        htmld = htmld.replaceAll("\\>", "&gt;");
+        htmld = htmld.replaceAll("\n", "<br>");
         return htmld;
     }
-                   
-   /** Replace tags with 
-     * &lt;font color="color"&gt;&lt;b&gt;&lt;tag&gt;&lt;/b&gt;&lt;/font&gt; 
+
+    /**
+     * Replace tags with &lt;font
+     * color="color"&gt;&lt;b&gt;&lt;tag&gt;&lt;/b&gt;&lt;/font&gt;
      */
-    private String colorTags(String str, String color)
-    {
-        //show OmegaT tags in bold and color
+    private String colorTags(String str, String color, Pattern printfPattern) {
+        // show OmegaT tags in bold and color
         Matcher tagMatch = PatternConsts.OMEGAT_HTML_TAG.matcher(str);
-        str = tagMatch.replaceAll(
-                "<font color=\"" + color + "\"><b>$1</b></font>");              // NOI18N
-        //show linefeed as symbol
+        str = tagMatch.replaceAll("<font color=\"" + color + "\"><b>$1</b></font>");
+        // show linefeed as symbol
         Matcher lfMatch = PatternConsts.HTML_BR.matcher(str);
-        ///simulate unicode symbol for linefeed "\u240A", which is not displayed correctly.
-        str = lfMatch.replaceAll(
-                "<font color=\"" + color + "\"><sup>L</sup>F<br></font>");      // NOI18N
-        //show printf variables in bold and color (e.g. %s and %n\$s)
-        Matcher varMatch = PatternConsts.PRINTF_VARS.matcher(str);
-        str = varMatch.replaceAll(
-                "<font color=\"" + color + "\"><b>$0</b></font>");              // NOI18N
+        // /simulate unicode symbol for linefeed "\u240A", which is not
+        // displayed correctly.
+        str = lfMatch.replaceAll("<font color=\"" + color + "\"><sup>L</sup>F<br></font>");
+        // show printf variables in bold and color (e.g. %s and %n\$s)
+        if (printfPattern != null) {
+            Matcher varMatch = PatternConsts.PRINTF_VARS.matcher(str);
+            str = varMatch.replaceAll("<font color=\"" + color + "\"><b>$0</b></font>");
+        }
         return str;
     }
-   
-    public void displayStringList(List<SourceTextEntry> stringList)
-    {
+
+    public void displayStringList(List<SourceTextEntry> stringList) {
         this.stringList = stringList;
         update();
     }
 
-    private void update()
-    {
+    private void update() {
+        Pattern printfPattern = null;
+        if ("true".equalsIgnoreCase(Preferences.getPreference(Preferences.CHECK_ALL_PRINTF_TAGS))) {
+            printfPattern = PatternConsts.PRINTF_VARS;
+        } else if ("true".equalsIgnoreCase(Preferences.getPreference(Preferences.CHECK_SIMPLE_PRINTF_TAGS))) {
+            printfPattern = PatternConsts.SIMPLE_PRINTF_VARS;
+        }
         StringBuffer output = new StringBuffer();
-        
-        output.append("<html>\n");                                              // NOI18N
-        output.append("<head>\n");                                              // NOI18N
-        output.append("<style>\n");                                             // NOI18N
-        output.append("<style type=\"text/css\">\n");                           // NOI18N
-        output.append("    <!--\n");                                            // NOI18N
-        output.append("    body {\n");                                          // NOI18N
-        output.append("            font-family: "+getFont().getName()+";\n");   // NOI18N
-        output.append("            font-size: "+getFont().getSize()+"pt;\n");   // NOI18N
-        output.append("    }\n");                                               // NOI18N
-        output.append("    -->\n");                                             // NOI18N
-        output.append("</style>\n");                                            // NOI18N
-        output.append("</head>\n");                                             // NOI18N
-        output.append("<body>\n");                                              // NOI18N
-        
-        output.append("<table BORDER COLS=3 WIDTH=\"100%\" NOSAVE>\n");         // NOI18N
-        for (SourceTextEntry ste : stringList)
-        {
-            StringEntry se = ste.getStrEntry();
-            String src = se.getSrcText();
-            String trans = se.getTranslation();
-            if (src.length()>0 && trans.length()>0)
-            {
-                int entryNum = ste.entryNum() + 1;
-                output.append("<tr>");                                          // NOI18N
-                output.append("<td>");                                          // NOI18N
-                output.append("<a href=");                                      // NOI18N
-                output.append("\"");                                            // NOI18N
-                output.append(entryNum);
-                output.append("\"");                                            // NOI18N
-                output.append(">");                                             // NOI18N
-                output.append(entryNum);
-                output.append("</a>");                                          // NOI18N
-                output.append("</td>");                                         // NOI18N
-                output.append("<td>");                                          // NOI18N
-                output.append(colorTags(htmlize(src), "blue"));                 // NOI18N     
-                output.append("</td>");                                         // NOI18N
-                output.append("<td>");                                          // NOI18N
-                output.append(colorTags(htmlize(trans), "blue"));               // NOI18N
-                output.append("</td>");                                         // NOI18N
-                output.append("</tr>\n");                                       // NOI18N
+
+        output.append("<html>\n");
+        output.append("<head>\n");
+        output.append("<style>\n");
+        output.append("<style type=\"text/css\">\n");
+        output.append("    <!--\n");
+        output.append("    body {\n");
+        output.append("            font-family: " + getFont().getName() + ";\n");
+        output.append("            font-size: " + getFont().getSize() + "pt;\n");
+        output.append("    }\n");
+        output.append("    -->\n");
+        output.append("</style>\n");
+        output.append("</head>\n");
+        output.append("<body>\n");
+
+        output.append("<table BORDER COLS=3 WIDTH=\"100%\" NOSAVE>\n");
+        for (SourceTextEntry ste : stringList) {
+            String src = ste.getSrcText();
+            TransEntry trans = Core.getProject().getTranslation(ste);
+            if (src.length() > 0 && trans != null) {
+                output.append("<tr>");
+                output.append("<td>");
+                output.append("<a href=");
+                output.append("\"");
+                output.append(ste.entryNum());
+                output.append("\"");
+                output.append(">");
+                output.append(ste.entryNum());
+                output.append("</a>");
+                output.append("</td>");
+                output.append("<td>");
+                output.append(colorTags(htmlize(src), "blue", printfPattern));
+                output.append("</td>");
+                output.append("<td>");
+                output.append(colorTags(htmlize(trans.translation), "blue", printfPattern));
+                output.append("</td>");
+                output.append("</tr>\n");
             }
         }
-        output.append("</table>\n");                                            // NOI18N
-        output.append("</body>\n");                                             // NOI18N
-        output.append("</html>\n");                                             // NOI18N
-        
-        m_editorPane.setContentType("text/html");                               // NOI18N
+        output.append("</table>\n");
+        output.append("</body>\n");
+        output.append("</html>\n");
+
+        m_editorPane.setContentType("text/html");
         m_editorPane.setText(output.toString());
     }
 

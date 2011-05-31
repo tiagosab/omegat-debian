@@ -8,6 +8,7 @@
                2007 Zoltan Bartko
                2008 Andrzej Sawula, Alex Buloichik
                2009 Didier Briel, Alex Buloichik
+               2010 Wildrich Fourie, Didier Briel
                Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
@@ -36,10 +37,12 @@ import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JSeparator;
 
 import net.roydesign.mac.MRJAdapter;
@@ -48,6 +51,7 @@ import org.omegat.core.Core;
 import org.omegat.core.CoreEvents;
 import org.omegat.core.events.IApplicationEventListener;
 import org.omegat.core.events.IProjectEventListener;
+import org.omegat.gui.editor.EditorSettings;
 import org.omegat.util.Log;
 import org.omegat.util.OStrings;
 import org.omegat.util.Preferences;
@@ -66,10 +70,11 @@ import org.openide.awt.Mnemonics;
  * @author Andrzej Sawula
  * @author Alex Buloichik (alex73mail@gmail.com)
  * @author Didier Briel
+ * @author Wildrich Fourie
  */
-public class MainWindowMenu implements ActionListener {
+public class MainWindowMenu implements ActionListener, IMainMenu {
     private static final Logger LOGGER = Logger.getLogger(MainWindowMenu.class.getName());
-    
+
     /** MainWindow instance. */
     protected final MainWindow mainWindow;
 
@@ -85,7 +90,7 @@ public class MainWindowMenu implements ActionListener {
      * Code for dispatching events from components to event handlers.
      * 
      * @param evt
-     *                event info
+     *            event info
      */
     public void actionPerformed(ActionEvent evt) {
         // Item what perform event.
@@ -95,7 +100,7 @@ public class MainWindowMenu implements ActionListener {
         String action = menuItem.getActionCommand();
 
         Log.logInfoRB("LOG_MENU_CLICK", action);
-        
+
         // Find method by item name.
         String methodName = action + "ActionPerformed";
         Method method = null;
@@ -161,7 +166,10 @@ public class MainWindowMenu implements ActionListener {
         editMenu.add(editOverwriteSourceMenuItem = createMenuItem("TF_MENU_EDIT_SOURCE_OVERWRITE"));
         editMenu.add(editInsertSourceMenuItem = createMenuItem("TF_MENU_EDIT_SOURCE_INSERT"));
         editMenu.add(new JSeparator());
+        editMenu.add(editTagPainterMenuItem = createMenuItem("TF_MENU_EDIT_TAGPAINT"));
+        editMenu.add(new JSeparator());
         editMenu.add(editExportSelectionMenuItem = createMenuItem("TF_MENU_EDIT_EXPORT_SELECTION"));
+        editMenu.add(editCreateGlossaryEntryMenuItem = createMenuItem("TF_MENU_EDIT_CREATE_GLOSSARY_ENTRY"));
         editMenu.add(new JSeparator());
         editMenu.add(editFindInProjectMenuItem = createMenuItem("TF_MENU_EDIT_FIND"));
         editMenu.add(new JSeparator());
@@ -187,26 +195,53 @@ public class MainWindowMenu implements ActionListener {
         gotoMenu.add(gotoHistoryForwardMenuItem = createMenuItem("TF_MENU_GOTO_FORWARD_IN_HISTORY"));
         gotoMenu.add(gotoHistoryBackMenuItem = createMenuItem("TF_MENU_GOTO_BACK_IN_HISTORY"));
 
-        viewMenu
-                .add(viewMarkTranslatedSegmentsCheckBoxMenuItem = createCheckboxMenuItem("TF_MENU_DISPLAY_MARK_TRANSLATED"));
-        viewMenu
-                .add(viewMarkUntranslatedSegmentsCheckBoxMenuItem = createCheckboxMenuItem("TF_MENU_DISPLAY_MARK_UNTRANSLATED"));
-        viewMenu
-                .add(viewDisplaySegmentSourceCheckBoxMenuItem = createCheckboxMenuItem("MW_VIEW_MENU_DISPLAY_SEGMENT_SOURCES"));
+        viewMenu.add(viewMarkTranslatedSegmentsCheckBoxMenuItem = createCheckboxMenuItem("TF_MENU_DISPLAY_MARK_TRANSLATED"));
+        viewMenu.add(viewMarkUntranslatedSegmentsCheckBoxMenuItem = createCheckboxMenuItem("TF_MENU_DISPLAY_MARK_UNTRANSLATED"));
+        viewMenu.add(viewDisplaySegmentSourceCheckBoxMenuItem = createCheckboxMenuItem("MW_VIEW_MENU_DISPLAY_SEGMENT_SOURCES"));
+        viewMenu.add(viewMarkNonUniqueSegmentsCheckBoxMenuItem = createCheckboxMenuItem("MW_VIEW_MENU_MARK_NON_UNIQUE_SEGMENTS"));
+        viewMenu.add(viewModificationInfoMenu = createMenu("MW_VIEW_MENU_MODIFICATION_INFO"));
+        ButtonGroup viewModificationInfoMenuBG = new ButtonGroup();
+        viewModificationInfoMenu
+                .add(viewDisplayModificationInfoNoneRadioButtonMenuItem = createRadioButtonMenuItem(
+                        "MW_VIEW_MENU_MODIFICATION_INFO_NONE", viewModificationInfoMenuBG));
+        viewModificationInfoMenu
+                .add(viewDisplayModificationInfoSelectedRadioButtonMenuItem = createRadioButtonMenuItem(
+                        "MW_VIEW_MENU_MODIFICATION_INFO_SELECTED", viewModificationInfoMenuBG));
+        viewModificationInfoMenu
+                .add(viewDisplayModificationInfoAllRadioButtonMenuItem = createRadioButtonMenuItem(
+                        "MW_VIEW_MENU_MODIFICATION_INFO_ALL", viewModificationInfoMenuBG));
 
         toolsMenu.add(toolsValidateTagsMenuItem = createMenuItem("TF_MENU_TOOLS_VALIDATE"));
+        toolsMenu
+                .add(toolsShowStatisticsStandardMenuItem = createMenuItem("TF_MENU_TOOLS_STATISTICS_STANDARD"));
+        toolsMenu
+                .add(toolsShowStatisticsMatchesMenuItem = createMenuItem("TF_MENU_TOOLS_STATISTICS_MATCHES"));
 
-        optionsMenu.add(optionsTabAdvanceCheckBoxMenuItem = createCheckboxMenuItem("TF_MENU_DISPLAY_ADVANCE"));
+        optionsMenu
+                .add(optionsTabAdvanceCheckBoxMenuItem = createCheckboxMenuItem("TF_MENU_DISPLAY_ADVANCE"));
         optionsMenu
                 .add(optionsAlwaysConfirmQuitCheckBoxMenuItem = createCheckboxMenuItem("MW_OPTIONSMENU_ALWAYS_CONFIRM_QUIT"));
-        optionsMenu.add(optionsGoogleTranslateMenuItem = createCheckboxMenuItem("TF_OPTIONSMENU_GOOGLETRANSLATE"));
+        optionsMenu.add(optionsMachineTranslateMenu = createMenu("TF_OPTIONSMENU_MACHINETRANSLATE"));
+
+        optionsMenu.add(optionsTransTipsMenu = createMenu("TF_OPTIONSMENU_TRANSTIPS"));
+        optionsTransTipsMenu
+                .add(optionsTransTipsEnableMenuItem = createCheckboxMenuItem("TF_OPTIONSMENU_TRANSTIPS_ENABLE"));
+        optionsTransTipsMenu
+                .add(optionsTransTipsExactMatchMenuItem = createCheckboxMenuItem("TF_OPTIONSMENU_TRANSTIPS_EXACTMATCH"));
         optionsMenu.add(new JSeparator());
         optionsMenu.add(optionsFontSelectionMenuItem = createMenuItem("TF_MENU_DISPLAY_FONT"));
         optionsMenu.add(optionsSetupFileFiltersMenuItem = createMenuItem("TF_MENU_DISPLAY_FILTERS"));
         optionsMenu.add(optionsSentsegMenuItem = createMenuItem("MW_OPTIONSMENU_SENTSEG"));
         optionsMenu.add(optionsSpellCheckMenuItem = createMenuItem("MW_OPTIONSMENU_SPELLCHECK"));
         optionsMenu.add(optionsWorkflowMenuItem = createMenuItem("MW_OPTIONSMENU_WORKFLOW"));
+        optionsMenu.add(optionsTagValidationMenuItem = createMenuItem("MW_OPTIONSMENU_TAGVALIDATION"));
+        optionsMenu.add(optionsTeamMenuItem = createMenuItem("MW_OPTIONSMENU_TEAM"));
+        optionsMenu.add(optionsExtTMXMenuItem = createMenuItem("MW_OPTIONSMENU_EXT_TMX"));
+        optionsMenu.add(optionsViewOptionsMenuItem = createMenuItem("MW_OPTIONSMENU_VIEW"));
+        optionsMenu.add(optionsViewOptionsMenuLoginItem = createMenuItem("MW_OPTIONSMENU_LOGIN"));
         optionsMenu.add(optionsRestoreGUIMenuItem = createMenuItem("MW_OPTIONSMENU_RESTORE_GUI"));
+
+        optionsMenu.add(new JSeparator());
 
         helpMenu.add(helpContentsMenuItem = createMenuItem("TF_MENU_HELP_CONTENTS"));
         helpMenu.add(helpAboutMenuItem = createMenuItem("TF_MENU_HELP_ABOUT"));
@@ -215,16 +250,17 @@ public class MainWindowMenu implements ActionListener {
         MainWindowMenuShortcuts.setShortcuts(mainMenu);
 
         initMacSpecific();
-        
+
         CoreEvents.registerApplicationEventListener(new IApplicationEventListener() {
             public void onApplicationStartup() {
-                updateCheckboxesOnStart();        
+                updateCheckboxesOnStart();
                 onProjectStatusChanged(false);
             }
+
             public void onApplicationShutdown() {
             }
         });
-        
+
         CoreEvents.registerProjectChangeListener(new IProjectEventListener() {
             public void onProjectChanged(PROJECT_CHANGE_TYPE eventType) {
                 if (Core.getProject().isProjectLoaded()) {
@@ -241,15 +277,31 @@ public class MainWindowMenu implements ActionListener {
     /** Updates menu checkboxes from preferences on start */
     private void updateCheckboxesOnStart() {
         optionsTabAdvanceCheckBoxMenuItem.setSelected(Core.getEditor().getSettings().isUseTabForAdvance());
-        optionsAlwaysConfirmQuitCheckBoxMenuItem.setSelected(Preferences.isPreference(Preferences.ALWAYS_CONFIRM_QUIT));
-        optionsGoogleTranslateMenuItem.setSelected(Preferences.isPreference(Preferences.ALLOW_GOOGLE_TRANSLATE));
+        optionsAlwaysConfirmQuitCheckBoxMenuItem.setSelected(Preferences
+                .isPreference(Preferences.ALWAYS_CONFIRM_QUIT));
+        optionsTransTipsEnableMenuItem.setSelected(Preferences.isPreference(Preferences.TRANSTIPS));
+        optionsTransTipsExactMatchMenuItem.setSelected(Preferences
+                .isPreference(Preferences.TRANSTIPS_EXACT_SEARCH));
 
-        viewMarkTranslatedSegmentsCheckBoxMenuItem.setSelected(Core.getEditor().getSettings().isMarkTranslated());
-        viewMarkUntranslatedSegmentsCheckBoxMenuItem.setSelected(Core.getEditor().getSettings().isMarkUntranslated());
+        viewMarkTranslatedSegmentsCheckBoxMenuItem.setSelected(Core.getEditor().getSettings()
+                .isMarkTranslated());
+        viewMarkUntranslatedSegmentsCheckBoxMenuItem.setSelected(Core.getEditor().getSettings()
+                .isMarkUntranslated());
 
-        viewDisplaySegmentSourceCheckBoxMenuItem.setSelected(Core.getEditor().getSettings().isDisplaySegmentSources());
-        
-        updateEditOverwriteMachineTranslationMenuItem();
+        viewDisplaySegmentSourceCheckBoxMenuItem.setSelected(Core.getEditor().getSettings()
+                .isDisplaySegmentSources());
+        viewMarkNonUniqueSegmentsCheckBoxMenuItem.setSelected(Core.getEditor().getSettings()
+                .isMarkNonUniqueSegments());
+
+        viewDisplayModificationInfoNoneRadioButtonMenuItem
+                .setSelected(EditorSettings.DISPLAY_MODIFICATION_INFO_NONE.equals(Core.getEditor()
+                        .getSettings().getDisplayModificationInfo()));
+        viewDisplayModificationInfoSelectedRadioButtonMenuItem
+                .setSelected(EditorSettings.DISPLAY_MODIFICATION_INFO_SELECTED.equals(Core.getEditor()
+                        .getSettings().getDisplayModificationInfo()));
+        viewDisplayModificationInfoAllRadioButtonMenuItem
+                .setSelected(EditorSettings.DISPLAY_MODIFICATION_INFO_ALL.equals(Core.getEditor()
+                        .getSettings().getDisplayModificationInfo()));
     }
 
     /**
@@ -277,7 +329,7 @@ public class MainWindowMenu implements ActionListener {
      * Create menu instance and set title.
      * 
      * @param titleKey
-     *                title name key in resource bundle
+     *            title name key in resource bundle
      * @return menu instance
      */
     private JMenu createMenu(final String titleKey) {
@@ -290,7 +342,7 @@ public class MainWindowMenu implements ActionListener {
      * Create menu item instance and set title.
      * 
      * @param titleKey
-     *                title name key in resource bundle
+     *            title name key in resource bundle
      * @return menu item instance
      */
     private JMenuItem createMenuItem(final String titleKey) {
@@ -304,13 +356,28 @@ public class MainWindowMenu implements ActionListener {
      * Create menu item instance and set title.
      * 
      * @param titleKey
-     *                title name key in resource bundle
+     *            title name key in resource bundle
      * @return menu item instance
      */
     private JCheckBoxMenuItem createCheckboxMenuItem(final String titleKey) {
         JCheckBoxMenuItem result = new JCheckBoxMenuItem();
         Mnemonics.setLocalizedText(result, OStrings.getString(titleKey));
         result.addActionListener(this);
+        return result;
+    }
+
+    /**
+     * Create menu item instance and set title.
+     * 
+     * @param titleKey
+     *            title name key in resource bundle
+     * @return menu item instance
+     */
+    private JRadioButtonMenuItem createRadioButtonMenuItem(final String titleKey, ButtonGroup buttonGroup) {
+        JRadioButtonMenuItem result = new JRadioButtonMenuItem();
+        Mnemonics.setLocalizedText(result, OStrings.getString(titleKey));
+        result.addActionListener(this);
+        buttonGroup.add(result);
         return result;
     }
 
@@ -335,7 +402,7 @@ public class MainWindowMenu implements ActionListener {
      * Enable or disable items depend of project open or close.
      * 
      * @param isProjectOpened
-     *                project open status: true if opened, false if closed
+     *            project open status: true if opened, false if closed
      */
     private void onProjectStatusChanged(final boolean isProjectOpened) {
         JMenuItem[] itemsToSwitchOff = new JMenuItem[] { projectNewMenuItem, projectOpenMenuItem };
@@ -345,14 +412,16 @@ public class MainWindowMenu implements ActionListener {
                 projectCompileMenuItem,
 
                 editMenu, editFindInProjectMenuItem, editInsertSourceMenuItem, editInsertTranslationMenuItem,
-                editOverwriteSourceMenuItem, editOverwriteTranslationMenuItem, editRedoMenuItem,
-                editSelectFuzzy1MenuItem, editSelectFuzzy2MenuItem, editSelectFuzzy3MenuItem, editSelectFuzzy4MenuItem,
-                editSelectFuzzy5MenuItem, editUndoMenuItem, switchCaseSubMenu, editOverwriteMachineTranslationMenuItem,
+                editTagPainterMenuItem, editOverwriteSourceMenuItem, editOverwriteTranslationMenuItem,
+                editRedoMenuItem, editSelectFuzzy1MenuItem, editSelectFuzzy2MenuItem,
+                editSelectFuzzy3MenuItem, editSelectFuzzy4MenuItem, editSelectFuzzy5MenuItem,
+                editUndoMenuItem, switchCaseSubMenu, editOverwriteMachineTranslationMenuItem,
 
                 gotoMenu, gotoNextSegmentMenuItem, gotoNextUntranslatedMenuItem, gotoPreviousSegmentMenuItem,
                 gotoSegmentMenuItem,
 
-                viewFileListMenuItem, toolsValidateTagsMenuItem };
+                viewFileListMenuItem, toolsValidateTagsMenuItem, toolsShowStatisticsStandardMenuItem,
+                toolsShowStatisticsMatchesMenuItem };
 
         for (JMenuItem item : itemsToSwitchOff) {
             item.setEnabled(!isProjectOpened);
@@ -360,18 +429,14 @@ public class MainWindowMenu implements ActionListener {
         for (JMenuItem item : itemsToSwitchOn) {
             item.setEnabled(isProjectOpened);
         }
-
-        updateEditOverwriteMachineTranslationMenuItem();
     }
 
-    /**
-     * Enable or disable 'Override Machine Translation' menu item.
-     */
-    protected void updateEditOverwriteMachineTranslationMenuItem() {
-        editOverwriteMachineTranslationMenuItem
-                .setEnabled(Core.getProject().isProjectLoaded()
-                        && Preferences
-                                .isPreference(Preferences.ALLOW_GOOGLE_TRANSLATE));
+    public JMenu getMachineTranslationMenu() {
+        return optionsMachineTranslateMenu;
+    }
+
+    public JMenu getOptionsMenu() {
+        return optionsMenu;
     }
 
     JMenuItem cycleSwitchCaseMenuItem;
@@ -389,7 +454,9 @@ public class MainWindowMenu implements ActionListener {
     JMenuItem editSelectFuzzy4MenuItem;
     JMenuItem editSelectFuzzy5MenuItem;
     JMenuItem editUndoMenuItem;
+    JMenuItem editTagPainterMenuItem;
     JMenuItem editExportSelectionMenuItem;
+    JMenuItem editCreateGlossaryEntryMenuItem;
     public JMenuItem gotoHistoryBackMenuItem;
     public JMenuItem gotoHistoryForwardMenuItem;
     JMenu gotoMenu;
@@ -410,8 +477,16 @@ public class MainWindowMenu implements ActionListener {
     JMenuItem optionsSetupFileFiltersMenuItem;
     JMenuItem optionsSpellCheckMenuItem;
     JCheckBoxMenuItem optionsTabAdvanceCheckBoxMenuItem;
-    JCheckBoxMenuItem optionsGoogleTranslateMenuItem;
+    JMenu optionsMachineTranslateMenu;
+    JMenu optionsTransTipsMenu;
+    JCheckBoxMenuItem optionsTransTipsEnableMenuItem;
+    JCheckBoxMenuItem optionsTransTipsExactMatchMenuItem;
     JMenuItem optionsWorkflowMenuItem;
+    JMenuItem optionsTagValidationMenuItem;
+    JMenuItem optionsTeamMenuItem;
+    JMenuItem optionsExtTMXMenuItem;
+    JMenuItem optionsViewOptionsMenuItem;
+    JMenuItem optionsViewOptionsMenuLoginItem;
     JMenuItem projectCloseMenuItem;
     JMenuItem projectCompileMenuItem;
     JMenuItem projectEditMenuItem;
@@ -427,8 +502,15 @@ public class MainWindowMenu implements ActionListener {
     JMenuItem titleCaseMenuItem;
     JMenu toolsMenu;
     JMenuItem toolsValidateTagsMenuItem;
+    JMenuItem toolsShowStatisticsStandardMenuItem;
+    JMenuItem toolsShowStatisticsMatchesMenuItem;
     JMenuItem upperCaseMenuItem;
     JCheckBoxMenuItem viewDisplaySegmentSourceCheckBoxMenuItem;
+    JCheckBoxMenuItem viewMarkNonUniqueSegmentsCheckBoxMenuItem;
+    JMenu viewModificationInfoMenu;
+    JRadioButtonMenuItem viewDisplayModificationInfoNoneRadioButtonMenuItem;
+    JRadioButtonMenuItem viewDisplayModificationInfoSelectedRadioButtonMenuItem;
+    JRadioButtonMenuItem viewDisplayModificationInfoAllRadioButtonMenuItem;
     JMenuItem viewFileListMenuItem;
     JCheckBoxMenuItem viewMarkTranslatedSegmentsCheckBoxMenuItem;
     JCheckBoxMenuItem viewMarkUntranslatedSegmentsCheckBoxMenuItem;

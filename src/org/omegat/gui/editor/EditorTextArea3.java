@@ -1,10 +1,11 @@
 /**************************************************************************
- OmegaT - Computer Assisted Translation (CAT) tool 
-          with fuzzy matching, translation memory, keyword search, 
+ OmegaT - Computer Assisted Translation (CAT) tool
+          with fuzzy matching, translation memory, keyword search,
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2009 Alex Buloichik
                2009 Didier Briel
+               2010 Wildrich Fourie
                Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
@@ -25,19 +26,17 @@
 
 package org.omegat.gui.editor;
 
-import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.swing.JEditorPane;
-import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
-import javax.swing.JSeparator;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.text.AbstractDocument;
@@ -46,6 +45,7 @@ import javax.swing.text.BoxView;
 import javax.swing.text.ComponentView;
 import javax.swing.text.Element;
 import javax.swing.text.IconView;
+import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.ParagraphView;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledEditorKit;
@@ -54,19 +54,16 @@ import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 import javax.swing.undo.UndoManager;
 
-import org.omegat.core.Core;
 import org.omegat.core.CoreEvents;
-import org.omegat.util.Log;
-import org.omegat.util.OConsts;
-import org.omegat.util.OStrings;
 import org.omegat.util.StaticUtils;
-import org.omegat.util.gui.UIThreadsUtil;
+import org.omegat.util.gui.DockingUI;
 
 /**
  * Changes of standard JEditorPane implementation for support custom behavior.
  * 
  * @author Alex Buloichik (alex73mail@gmail.com)
  * @author Didier Briel
+ * @author Wildrich Fourie
  */
 public class EditorTextArea3 extends JEditorPane {
 
@@ -74,6 +71,8 @@ public class EditorTextArea3 extends JEditorPane {
     protected final UndoManager undoManager = new UndoManager();
 
     protected final EditorController controller;
+
+    protected final List<PopupMenuConstructorInfo> popupConstructors = new ArrayList<PopupMenuConstructorInfo>();
 
     protected String currentWord;
 
@@ -83,6 +82,15 @@ public class EditorTextArea3 extends JEditorPane {
             public ViewFactory getViewFactory() {
                 return factory3;
             }
+
+            protected void createInputAttributes(Element element, MutableAttributeSet set) {
+                set.removeAttributes(set);
+                EditorController c = EditorTextArea3.this.controller;
+                try {
+                    c.m_docSegList[c.displayedEntryIndex].createInputAttributes(element, set);
+                } catch (Exception ex) {
+                }
+            }
         });
 
         addMouseListener(mouseListener);
@@ -90,20 +98,23 @@ public class EditorTextArea3 extends JEditorPane {
         addCaretListener(new CaretListener() {
             public void caretUpdate(CaretEvent e) {
                 try {
-                    int start = Utilities.getWordStart(EditorTextArea3.this, e
-                            .getMark());
-                    int end = Utilities.getWordEnd(EditorTextArea3.this, e
-                            .getMark());
+                    int start = EditorUtils.getWordStart(EditorTextArea3.this, e.getMark());
+                    int end = EditorUtils.getWordEnd(EditorTextArea3.this, e.getMark());
+                    if (end - start <= 0) {
+                        // word not defined
+                        return;
+                    }
                     String newWord = getText(start, end - start);
                     if (!newWord.equals(currentWord)) {
                         currentWord = newWord;
-                        CoreEvents.fireEditorNewWOrd(newWord);
+                        CoreEvents.fireEditorNewWord(newWord);
                     }
                 } catch (BadLocationException ex) {
                     ex.printStackTrace();
                 }
             }
         });
+        setToolTipText("");
     }
 
     /** Orders to cancel all Undoable edits. */
@@ -131,16 +142,57 @@ public class EditorTextArea3 extends JEditorPane {
                 controller.goToSegmentAtLocation(getCaretPosition());
             }
             if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                // any spell checking to be done?
-                if (createSpellCheckerPopUp(e.getPoint()))
-                    return;
+                PopupMenuConstructorInfo[] cons;
+                synchronized (popupConstructors) {
+                    /**
+                     * Copy constructors - for disable blocking in the procesing
+                     * time.
+                     */
+                    cons = popupConstructors.toArray(new PopupMenuConstructorInfo[popupConstructors.size()]);
+                }
 
-                // fall back to go to segment
-                if (createGoToSegmentPopUp(e.getPoint()))
-                    return;
+                // where is the mouse
+                int mousepos = viewToModel(e.getPoint());
+                boolean isInActiveTranslation = mousepos >= getOmDocument().getTranslationStart()
+                        && mousepos <= getOmDocument().getTranslationEnd();
+                boolean isInActiveEntry;
+                int ae = controller.displayedEntryIndex;
+                SegmentBuilder sb = controller.m_docSegList[ae];
+                if (sb.isActive()) {
+                    isInActiveEntry = mousepos >= sb.getStartPosition() && mousepos <= sb.getEndPosition();
+                } else {
+                    isInActiveEntry = false;
+                }
+
+                JPopupMenu popup = new JPopupMenu();
+                for (PopupMenuConstructorInfo c : cons) {
+                    // call each constructor
+                    c.constructor.addItems(popup, EditorTextArea3.this, mousepos, isInActiveEntry,
+                            isInActiveTranslation, sb);
+                }
+
+                DockingUI.removeUnusedMenuSeparators(popup);
+
+                if (popup.getComponentCount() > 0) {
+                    popup.show(EditorTextArea3.this, (int) e.getPoint().getX(), (int) e.getPoint().getY());
+                }
             }
         }
     };
+
+    /**
+     * Add new constructor into list and sort full list by priority.
+     */
+    protected void registerPopupMenuConstructors(int priority, IPopupMenuConstructor constructor) {
+        synchronized (popupConstructors) {
+            popupConstructors.add(new PopupMenuConstructorInfo(priority, constructor));
+            Collections.sort(popupConstructors, new Comparator<PopupMenuConstructorInfo>() {
+                public int compare(PopupMenuConstructorInfo o1, PopupMenuConstructorInfo o2) {
+                    return o1.priority - o2.priority;
+                }
+            });
+        }
+    }
 
     /**
      * Redefine some keys behavior. We can't use key listeners, because we have
@@ -190,8 +242,7 @@ public class EditorTextArea3 extends JEditorPane {
             }
         } else if (isKey(e, KeyEvent.VK_ENTER, KeyEvent.SHIFT_MASK)) {
             // convert Shift+Enter event to straight enter key
-            KeyEvent ke = new KeyEvent(e.getComponent(), e.getID(),
-                    e.getWhen(), 0, KeyEvent.VK_ENTER, '\n');
+            KeyEvent ke = new KeyEvent(e.getComponent(), e.getID(), e.getWhen(), 0, KeyEvent.VK_ENTER, '\n');
             super.processKeyEvent(ke);
             processed = true;
         } else if ((!mac && isKey(e, KeyEvent.VK_A, KeyEvent.CTRL_MASK))
@@ -200,8 +251,7 @@ public class EditorTextArea3 extends JEditorPane {
             setSelectionStart(doc.getTranslationStart());
             setSelectionEnd(doc.getTranslationEnd());
             processed = true;
-        } else if (isKey(e, KeyEvent.VK_O, KeyEvent.CTRL_MASK
-                | KeyEvent.SHIFT_MASK)) {
+        } else if (isKey(e, KeyEvent.VK_O, KeyEvent.CTRL_MASK | KeyEvent.SHIFT_MASK)) {
             // handle Ctrl+Shift+O - toggle orientation LTR-RTL
             controller.toggleOrientation();
             processed = true;
@@ -309,14 +359,14 @@ public class EditorTextArea3 extends JEditorPane {
         if (spos != epos) {
             // dealing with a selection here - make sure it's w/in bounds
             if (spos < start) {
-                setSelectionStart(start);
+                fixSelectionStart(start);
             } else if (spos > end) {
-                setSelectionStart(end);
+                fixSelectionStart(end);
             }
             if (epos > end) {
-                setSelectionEnd(end);
+                fixSelectionEnd(end);
             } else if (epos < start) {
-                setSelectionStart(start);
+                fixSelectionStart(start);
             }
         } else {
             // non selected text
@@ -326,6 +376,28 @@ public class EditorTextArea3 extends JEditorPane {
                 setCaretPosition(end);
             }
         }
+    }
+
+    /**
+     * Need to use own implementation, because standard method moves caret at
+     * the end.
+     */
+    private void fixSelectionStart(int start) {
+        if (getCaretPosition() <= start) {
+            // caret at the left - mark from ent to start
+            setCaretPosition(getSelectionEnd());
+            moveCaretPosition(start);
+        } else {
+            setSelectionStart(start);
+        }
+    }
+
+    /**
+     * Need to use own implementation, because standard method moves caret at
+     * the end.
+     */
+    private void fixSelectionEnd(int end) {
+        setSelectionEnd(end);
     }
 
     /**
@@ -372,150 +444,11 @@ public class EditorTextArea3 extends JEditorPane {
         return st != null ? EditorUtils.removeDirectionChars(st) : null;
     }
 
-    /**
-     * creates a popup menu for inactive segments - with an item allowing to go
-     * to the given segment.
-     */
-    private boolean createGoToSegmentPopUp(Point point) {
-        final int mousepos = this.viewToModel(point);
-
-        if (mousepos >= getOmDocument().getTranslationStart()
-                - OConsts.segmentStartStringFull.length()
-                && mousepos <= getOmDocument().getTranslationEnd()
-                        + OConsts.segmentStartStringFull.length())
-            return false;
-
-        JPopupMenu popup = new JPopupMenu();
-
-        JMenuItem item = popup
-                .add(OStrings.getString("MW_PROMPT_SEG_NR_TITLE"));
-        item.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                setCaretPosition(mousepos);
-                controller.goToSegmentAtLocation(getCaretPosition());
-            }
-        });
-
-        popup.show(this, (int) point.getX(), (int) point.getY());
-
-        return true;
-    }
-
-    /**
-     * create the spell checker popup menu - suggestions for a wrong word, add
-     * and ignore. Works only for the active segment, for the translation
-     * 
-     * @param point
-     *            : where should the popup be shown
-     */
-    protected boolean createSpellCheckerPopUp(final Point point) {
-        if (!controller.getSettings().isAutoSpellChecking())
-            return false;
-
-        // where is the mouse
-        int mousepos = viewToModel(point);
-
-        if (mousepos < getOmDocument().getTranslationStart()
-                || mousepos > getOmDocument().getTranslationEnd())
-            return false;
-
-        try {
-            // find the word boundaries
-            final int wordStart = Utilities.getWordStart(this, mousepos);
-            final int wordEnd = Utilities.getWordEnd(this, mousepos);
-
-            final String word = EditorUtils.removeDirection(getText(wordStart,
-                    wordEnd - wordStart));
-
-            final AbstractDocument xlDoc = (AbstractDocument) getDocument();
-
-            if (!Core.getSpellChecker().isCorrect(word)) {
-                // get the suggestions and create a menu
-                List<String> suggestions = Core.getSpellChecker().suggest(word);
-
-                // create the menu
-                JPopupMenu popup = new JPopupMenu();
-
-                // the suggestions
-                for (final String replacement : suggestions) {
-                    JMenuItem item = popup.add(replacement);
-                    item.addActionListener(new ActionListener() {
-                        // the action: replace the word with the selected
-                        // suggestion
-                        public void actionPerformed(ActionEvent e) {
-                            try {
-                                int pos = getCaretPosition();
-                                xlDoc.replace(wordStart, word.length(),
-                                        replacement, null);
-                                setCaretPosition(pos);
-                            } catch (BadLocationException exc) {
-                                Log.log(exc);
-                            }
-                        }
-                    });
-                }
-
-                // what if no action is done?
-                if (suggestions.size() == 0) {
-                    JMenuItem item = popup.add(OStrings
-                            .getString("SC_NO_SUGGESTIONS"));
-                    item.addActionListener(new ActionListener() {
-                        public void actionPerformed(ActionEvent e) {
-                            // just hide the menu
-                        }
-                    });
-                }
-
-                popup.add(new JSeparator());
-
-                // let us ignore it
-                JMenuItem item = popup.add(OStrings.getString("SC_IGNORE_ALL"));
-                item.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        addIgnoreWord(word, wordStart, false);
-                    }
-                });
-
-                // or add it to the dictionary
-                item = popup.add(OStrings.getString("SC_ADD_TO_DICTIONARY"));
-                item.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        addIgnoreWord(word, wordStart, true);
-                    }
-                });
-
-                popup.show(this, (int) point.getX(), (int) point.getY());
-            }
-        } catch (BadLocationException ex) {
-            Log.log(ex);
-        }
-        return true;
-    }
-
-    /**
-     * add a new word to the spell checker or ignore a word
-     * 
-     * @param word
-     *            : the word in question
-     * @param offset
-     *            : the offset of the word in the editor
-     * @param add
-     *            : true for add, false for ignore
-     */
-    protected void addIgnoreWord(final String word, final int offset,
-            final boolean add) {
-        UIThreadsUtil.mustBeSwingThread();
-
-        if (add) {
-            Core.getSpellChecker().learnWord(word);
-        } else {
-            Core.getSpellChecker().ignoreWord(word);
-        }
-
-        controller.spellCheckerThread.resetCache();
-
-        // redraw segments
-        repaint();
+    @Override
+    public String getToolTipText(MouseEvent event) {
+        int pos = viewToModel(event.getPoint());
+        int s = controller.getSegmentIndexAtLocation(pos);
+        return controller.markerController.getToolTips(s, pos);
     }
 
     /**
@@ -542,4 +475,14 @@ public class EditorTextArea3 extends JEditorPane {
             return new ViewLabel(elem);
         }
     };
+
+    private static class PopupMenuConstructorInfo {
+        final int priority;
+        final IPopupMenuConstructor constructor;
+
+        public PopupMenuConstructorInfo(int priority, IPopupMenuConstructor constructor) {
+            this.priority = priority;
+            this.constructor = constructor;
+        }
+    }
 }

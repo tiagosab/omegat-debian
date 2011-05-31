@@ -26,8 +26,12 @@ package org.omegat.core.data;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
-import org.omegat.core.data.stat.StatisticsInfo;
+import org.omegat.core.matching.ITokenizer;
+import org.omegat.core.statistics.StatisticsInfo;
 import org.omegat.filters2.TranslationException;
 
 /**
@@ -37,7 +41,7 @@ import org.omegat.filters2.TranslationException;
  */
 public class NotLoadedProject implements IProject {
 
-    public void compileProject() throws IOException, TranslationException {
+    public void compileProject(String sourcePattern) throws IOException, TranslationException {
     }
 
     public void closeProject() {
@@ -58,6 +62,14 @@ public class NotLoadedProject implements IProject {
         return null;
     }
 
+    public TransEntry getTranslation(SourceTextEntry ste) {
+        return null;
+    }
+
+    public Set<Entry<String, TransEntry>> getTranslationsSet() {
+        return null;
+    }
+
     public List<FileInfo> getProjectFiles() {
         return null;
     }
@@ -70,7 +82,11 @@ public class NotLoadedProject implements IProject {
         return null;
     }
 
-    public List<TransMemory> getTransMemory() {
+    public Map<String, TransEntry> getOrphanedSegments() {
+        return null;
+    }
+
+    public Map<String, List<TransMemory>> getTransMemories() {
         return null;
     }
 
@@ -90,7 +106,21 @@ public class NotLoadedProject implements IProject {
 
     public void saveProjectProperties() throws IOException {
     }
-    
+
+    public void setAuthorTranslation(String author, SourceTextEntry entry, String trans) {
+    }
+
     public void setTranslation(SourceTextEntry entry, String trans) {
+    }
+
+    public ITokenizer getSourceTokenizer() {
+        return null;
+    }
+
+    public ITokenizer getTargetTokenizer() {
+        return null;
+    }
+
+    public void findNonUniqueSegments() {
     }
 }

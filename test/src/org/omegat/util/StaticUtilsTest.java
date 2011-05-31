@@ -24,15 +24,11 @@
 
 package org.omegat.util;
 
-import junit.framework.*;
-import java.awt.GraphicsEnvironment;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
-import java.util.List;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
  * Tests for (some) static utility methods.
@@ -75,6 +71,12 @@ public class StaticUtilsTest extends TestCase
                 (! tagList.get(0).toString().equals("b0")) ||
                 (! tagList.get(1).toString().equals("/b0")) )
             fail("Wrong tags found in '"+str+"': " + tagList.toString());
+    }
+
+    public void testCompressSpace()
+    {
+        if ( !"One Two Three Four Five".equals(StaticUtils.compressSpaces(" One Two\nThree   Four\r\nFive ")) ) fail("Space wrongly compressed");
+        if ( !"Six seven".equals(StaticUtils.compressSpaces("Six\tseven")) ) fail("Space wrongly compressed");
     }
 
 }

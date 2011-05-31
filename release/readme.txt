@@ -66,6 +66,11 @@ OmegaT supports the following file formats out of the box:
   - ResX
   - Android resource
   - LaTeX
+  - Typo3 LocManager
+  - Help & Manual
+  - Windows RC resources
+  - Mozilla DTD
+  - DokuWiki
 
 OmegaT can be customized to support other file formats as well.
 
@@ -213,13 +218,15 @@ Previous contributors include:
 
 Code has been contributed by
   Zoltan Bartko
-  Didier Briel (release manager)
+  Volker Berlin
+  Didier Briel (development manager)
   Kim Bruning
-  Alex Buloichik
+  Alex Buloichik (lead developer)
   Sandra Jean Chua
   Martin Fleurke  
   Wildrich Fourie
   Thomas Huriaux
+  Ibai Lakunza Velasco
   Fabián Mandelbaum
   Maxym Mykhalchuk 
   Arno Peters
@@ -227,6 +234,8 @@ Code has been contributed by
   Tiago Saboga
   Andrzej Sawuła
   Benjamin Siband
+  Rashid Umarov  
+  Antonio Vilei
   Martin Wunderlich
 
 Other contributions by

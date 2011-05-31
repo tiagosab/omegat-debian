@@ -31,11 +31,11 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.omegat.filters2.AbstractFilter;
+import org.omegat.filters2.FilterContext;
 import org.omegat.filters2.Instance;
 import org.omegat.filters2.TranslationException;
 import org.omegat.util.OStrings;
@@ -43,8 +43,7 @@ import org.omegat.util.OStrings;
 /**
  * Filter to support po files (in various encodings).
  * 
- * Format described on
- * http://www.gnu.org/software/hello/manual/gettext/PO-Files.html
+ * Format described on http://www.gnu.org/software/hello/manual/gettext/PO-Files.html
  * 
  * Filter is not thread-safe !
  * 
@@ -57,17 +56,15 @@ import org.omegat.util.OStrings;
 public class PoFilter extends AbstractFilter {
 
     protected static Pattern COMMENT_FUZZY = Pattern.compile("#, fuzzy");
-    protected static Pattern COMMENT_FUZZY_OTHER = Pattern
-            .compile("#,.* fuzzy.*");
+    protected static Pattern COMMENT_FUZZY_OTHER = Pattern.compile("#,.* fuzzy.*");
     protected static Pattern COMMENT_NOWRAP = Pattern.compile("#,.* no-wrap.*");
-    protected static Pattern MSG_ID = Pattern
-            .compile("msgid(_plural)? \"(.*)\"");
-    protected static Pattern MSG_STR = Pattern
-            .compile("msgstr(\\[[0-9]+\\])? \"(.*)\"");
+    protected static Pattern MSG_ID = Pattern.compile("msgid(_plural)?\\s+\"(.*)\"");
+    protected static Pattern MSG_STR = Pattern.compile("msgstr(\\[[0-9]+\\])?\\s+\"(.*)\"");
+    protected static Pattern MSG_CTX = Pattern.compile("msgctxt\\s+\"(.*)\"");
     protected static Pattern MSG_OTHER = Pattern.compile("\"(.*)\"");
 
     enum MODE {
-        MSGID, MSGSTR, MSGID_PLURAL, MSGSTR_PLURAL
+        MSGID, MSGSTR, MSGID_PLURAL, MSGSTR_PLURAL, MSGCTX
     };
 
     private StringBuilder[] sources, targets;
@@ -80,9 +77,7 @@ public class PoFilter extends AbstractFilter {
     }
 
     public Instance[] getDefaultInstances() {
-        return new Instance[] { new Instance("*.po"), // NOI18N
-                new Instance("*.pot") // NOI18N
-        };
+        return new Instance[] { new Instance("*.po"), new Instance("*.pot") };
     }
 
     public boolean isSourceEncodingVariable() {
@@ -93,27 +88,47 @@ public class PoFilter extends AbstractFilter {
         return true;
     }
 
-    public List<File> processFile(File inFile, String inEncoding, File outFile,
-            String outEncoding) throws IOException, TranslationException {
-        BufferedReader reader = createReader(inFile, inEncoding);
-        BufferedWriter writer;
-
-        if (outFile != null)
-            writer = createWriter(outFile, outEncoding);
-        else
-            writer = null;
-
-        processFile(reader, writer);
-
-        reader.close();
-        if (writer != null) {
-            writer.close();
-        }
-        return null;
+    public String getFuzzyMark() {
+        return "PO-fuzzy";
     }
 
-    public void processFile(BufferedReader in, BufferedWriter out)
-            throws IOException {
+    public void processFile(File inFile, File outFile, FilterContext fc) throws IOException,
+            TranslationException {
+        BufferedReader reader = createReader(inFile, fc.getInEncoding());
+        try {
+            BufferedWriter writer;
+
+            if (outFile != null) {
+                writer = createWriter(outFile, fc.getOutEncoding());
+            } else {
+                writer = null;
+            }
+
+            try {
+                processFile(reader, writer);
+            } finally {
+                if (writer != null) {
+                    writer.close();
+                }
+            }
+        } finally {
+            reader.close();
+        }
+    }
+
+    @Override
+    protected void alignFile(BufferedReader sourceFile, BufferedReader translatedFile) throws Exception {
+        // BOM (byte order mark) bugfix
+        translatedFile.mark(1);
+        int ch = translatedFile.read();
+        if (ch != 0xFEFF)
+            translatedFile.reset();
+
+        this.out = null;
+        processPoFile(translatedFile);
+    }
+
+    public void processFile(BufferedReader in, BufferedWriter out) throws IOException {
         // BOM (byte order mark) bugfix
         in.mark(1);
         int ch = in.read();
@@ -140,8 +155,7 @@ public class PoFilter extends AbstractFilter {
         String s;
         while ((s = in.readLine()) != null) {
             /*
-             * Removing the fuzzy markers, as it has no meanings after being
-             * processed by omegat
+             * Removing the fuzzy markers, as it has no meanings after being processed by omegat
              */
             if (COMMENT_FUZZY.matcher(s).matches()) {
                 fuzzy = true;
@@ -157,11 +171,9 @@ public class PoFilter extends AbstractFilter {
             if (COMMENT_NOWRAP.matcher(s).matches()) {
                 flushTranslation(currentMode);
                 /*
-                 * Read the no-wrap comment, indicating that the creator of the
-                 * po-file did not want long messages to be wrapped on multiple
-                 * lines. See 5.6.2 no-wrap of http://docs.oasis-open
-                 * .org/xliff/v1.2/xliff-profile-po/xliff
-                 * -profile-po-1.2-cd02.html for an example.
+                 * Read the no-wrap comment, indicating that the creator of the po-file did not want long
+                 * messages to be wrapped on multiple lines. See 5.6.2 no-wrap of http://docs.oasis-open
+                 * .org/xliff/v1.2/xliff-profile-po/xliff -profile-po-1.2-cd02.html for an example.
                  */
                 nowrap = true;
                 eol(s);
@@ -205,8 +217,18 @@ public class PoFilter extends AbstractFilter {
                 continue;
             }
 
+            if ((m = MSG_CTX.matcher(s)).matches()) {
+                currentMode = MODE.MSGCTX;
+                eol(s);
+
+                continue;
+            }
+
             if ((m = MSG_OTHER.matcher(s)).matches()) {
                 String text = m.group(1);
+                if (currentMode == null) {
+                    throw new IOException("Invalid file format");
+                }
                 switch (currentMode) {
                 case MSGID:
                     sources[0].append(text);
@@ -221,6 +243,9 @@ public class PoFilter extends AbstractFilter {
                     break;
                 case MSGSTR_PLURAL:
                     targets[currentPlural].append(text);
+                    break;
+                case MSGCTX:
+                    eol(s);
                     break;
                 }
                 continue;
@@ -249,20 +274,17 @@ public class PoFilter extends AbstractFilter {
         if (translation.length() == 0) {
             translation = null;
         }
-        if (!fuzzy) {
-            // add to real translation
-            entryProcessingCallback.addEntry(null, source, translation, null);
-        } else {
-            // add to real list without translation
-            entryProcessingCallback.addEntry(null, source, null, null);
-            // add to legacy TMX instead real translation
-            entryProcessingCallback.addLegacyTMXEntry("[PO-fuzzy] " + source,
-                    translation);
+        if (entryParseCallback != null) {
+            entryParseCallback.addEntry(null, source, translation, fuzzy, null, this);
+        } else if (entryAlignCallback != null) {
+            entryAlignCallback.addTranslation(null, source, translation, fuzzy, null, this);
         }
     }
-    
+
     protected void alignHeader(String header) {
-        entryProcessingCallback.addEntry(null, unescape(header), null, null);
+        if (entryParseCallback != null) {
+            entryParseCallback.addEntry(null, unescape(header), null, false, null, this);
+        }
     }
 
     protected void flushTranslation(MODE currentMode) throws IOException {
@@ -306,45 +328,38 @@ public class PoFilter extends AbstractFilter {
         targets[1].setLength(0);
     }
 
-    protected static final Pattern R1 = Pattern
-            .compile("(?<!\\\\)((\\\\\\\\)*)\\\\\"");
-    protected static final Pattern R2 = Pattern
-            .compile("(?<!\\\\)((\\\\\\\\)*)\\\\n");
-    protected static final Pattern R3 = Pattern
-            .compile("(?<!\\\\)((\\\\\\\\)*)\\\\t");
+    protected static final Pattern R1 = Pattern.compile("(?<!\\\\)((\\\\\\\\)*)\\\\\"");
+    protected static final Pattern R2 = Pattern.compile("(?<!\\\\)((\\\\\\\\)*)\\\\n");
+    protected static final Pattern R3 = Pattern.compile("(?<!\\\\)((\\\\\\\\)*)\\\\t");
     protected static final Pattern R4 = Pattern.compile("^\\\\n");
 
     /**
      * Private processEntry to do pre- and postprocessing.<br>
-     * The given entry is interpreted to a string (e.g. escaped quotes are
-     * unescaped, '\n' is translated into newline character, '\t' into tab
-     * character.) then translated and then returned as a PO-string-notation
-     * (e.g. double quotes escaped, newline characters represented as '\n' and
-     * surrounded by double quotes, possibly split up over multiple lines)<Br>
-     * Long translations are not split up over multiple lines as some PO editors
-     * do, but when there are newline characters in a translation, it is split
-     * up at the newline markers.<Br>
-     * If the nowrap parameter is true, a translation that exists of multiple
-     * lines starts with an empty string-line to left-align all lines. [With
-     * nowrap set to true, long lines are also never wrapped (except for at
-     * newline characters), but that was already not done without nowrap.] [
-     * 1869069 ] Escape support for PO
+     * The given entry is interpreted to a string (e.g. escaped quotes are unescaped, '\n' is translated into
+     * newline character, '\t' into tab character.) then translated and then returned as a PO-string-notation
+     * (e.g. double quotes escaped, newline characters represented as '\n' and surrounded by double quotes,
+     * possibly split up over multiple lines)<Br>
+     * Long translations are not split up over multiple lines as some PO editors do, but when there are
+     * newline characters in a translation, it is split up at the newline markers.<Br>
+     * If the nowrap parameter is true, a translation that exists of multiple lines starts with an empty
+     * string-line to left-align all lines. [With nowrap set to true, long lines are also never wrapped
+     * (except for at newline characters), but that was already not done without nowrap.] [ 1869069 ] Escape
+     * support for PO
      * 
      * @param entry
-     *            The entire source text, without it's surrounding double
-     *            quotes, but otherwise not-interpreted
+     *            The entire source text, without it's surrounding double quotes, but otherwise
+     *            not-interpreted
      * @param nowrap
-     *            gives indication if the translation should not be wrapped over
-     *            multiple lines and all lines be left-aligned.
-     * @return The translated entry, within double quotes on each line (thus
-     *         ready to be printed to target file immediately)
+     *            gives indication if the translation should not be wrapped over multiple lines and all lines
+     *            be left-aligned.
+     * @return The translated entry, within double quotes on each line (thus ready to be printed to target
+     *         file immediately)
      **/
     private String getTranslation(StringBuilder en) {
         String entry = unescape(en.toString());
 
         // Do real translation
-        String translation = entryProcessingCallback
-                .getTranslation(null, entry);
+        String translation = entryTranslateCallback.getTranslation(null, entry);
 
         if (translation != null) {
             return "\"" + escape(translation) + "\"";
@@ -395,17 +410,13 @@ public class PoFilter extends AbstractFilter {
         translation = translation.replace("\\\\r", "\\r");
 
         /*
-         * Normally, long lines are wrapped at 'output page width', which
-         * defaults to ?76?, and always at newlines. IF the no-wrap indicator is
-         * present, long lines should not be wrapped, except on newline
-         * characters, in which case the first line should be empty, so that the
-         * different lines are aligned the same. OmegaT < 2.0 has never wrapped
-         * any line, and it is quite useless when the po-file is not edited with
-         * a plain-text-editor. But it is simple to wrap at least at newline
-         * characters (which is necessary for the translation of the po-header
-         * anyway) We can also honor the no-wrap instruction at least by letting
-         * the first line of a multi-line translation not be on the same line as
-         * 'msgstr'.
+         * Normally, long lines are wrapped at 'output page width', which defaults to ?76?, and always at
+         * newlines. IF the no-wrap indicator is present, long lines should not be wrapped, except on newline
+         * characters, in which case the first line should be empty, so that the different lines are aligned
+         * the same. OmegaT < 2.0 has never wrapped any line, and it is quite useless when the po-file is not
+         * edited with a plain-text-editor. But it is simple to wrap at least at newline characters (which is
+         * necessary for the translation of the po-header anyway) We can also honor the no-wrap instruction at
+         * least by letting the first line of a multi-line translation not be on the same line as 'msgstr'.
          */
         // Interprets newline chars. 'blah<br>blah' becomes
         // 'blah\n"<br>"blah'

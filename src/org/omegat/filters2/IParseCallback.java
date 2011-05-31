@@ -25,13 +25,11 @@
 package org.omegat.filters2;
 
 /**
- * Callback for processing all entries for filter.
+ * Callback for parse files.
  * 
  * @author Alex Buloichik <alex73mail@gmail.com>
  */
 public interface IParseCallback {
-    String processEntry(String entry);
-
     /**
      * Read entry from source file
      * 
@@ -41,29 +39,23 @@ public interface IParseCallback {
      *            source entry text
      * @param translation
      *            exist translation text
+     * @param isFuzzy
+     *            true if translation is fuzzy
      * @param comment
      *            comment for entry, if format supports it
+     * @param filter
+     *            filter which produces entry
      */
-    void addEntry(String id, String source, String translation, String comment);
+    void addEntry(String id, String source, String translation, boolean isFuzzy, String comment,
+            IFilter filter);
 
     /**
-     * Add data to the legacy TMX.
+     * Add data to the TMX with name like source file name.
      * 
      * @param source
      *            source entry text
      * @param translation
      *            translation
      */
-    void addLegacyTMXEntry(String source, String translation);
-
-    /**
-     * Get translation for output to compiled target.
-     * 
-     * @param id
-     *            ID in source file, or null if ID not supported by format
-     * @param source
-     *            source entry text
-     * @return translation or source if translation not exist
-     */
-    String getTranslation(String id, String source);
+    void addFileTMXEntry(String source, String translation);
 }

@@ -4,6 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
+               2009-2010 Alex Buloichik
                Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
@@ -20,10 +21,9 @@
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-**************************************************************************/
+ **************************************************************************/
 
 package org.omegat.core.data;
-
 
 /*
  * Source text entry represents an individual segment for
@@ -32,94 +32,55 @@ package org.omegat.core.data;
  * language strings
  *
  * @author Keith Godfrey
+ * @author Alex Buloichik (alex73mail@gmail.com)
  */
-public class SourceTextEntry
-{
-    /** 
+public class SourceTextEntry {
+    /** Source entry text. */
+    private String src;
+
+    public enum DUPLICATE {
+        /** There is no entries with the same source. */
+        NONE,
+        /** There is entries with the same source, and this is first entry. */
+        FIRST,
+        /** There is entries with the same source, and this is not first entry. */
+        NEXT
+    };
+
+    /** If entry with the same source already exist in project. */
+    DUPLICATE duplicate;
+
+    /**
      * Creates a new source text entry.
-     *
-     * @param str       unique StringEntry that holds source and translation of 
-     *                      this entry.
-     * @param file      information about the file this entry belongs to.
-     * @param entryNum  the number of this entry in a project.
+     * 
+     * @param str
+     *            unique StringEntry that holds source and translation of this entry.
+     * @param entryNum
+     *            the number of this entry in a project.
      */
-    public SourceTextEntry(StringEntry str, ProjectFileData file, 
-            int entryNum)
-    {
-        m_srcFile = file;
-        m_strEntry = str;
+    public SourceTextEntry(String src, int entryNum) {
         m_entryNum = entryNum;
-        m_strEntry.addParent(this);
+        this.src = src;
     }
-    
-    /** Returns information about the file this entry belongs to. */
-    public ProjectFileData getSrcFile()
-    { 
-        return m_srcFile;	
-    }
-    /** Returns the number of the first entry in the file this entry belongs to. */
-    public int getFirstInFile()
-    { 
-        return m_srcFile.firstEntry;	
-    }
-    /** Returns the number of the last entry in the file this entry belongs to. */
-    public int getLastInFile()
-    { 
-        return m_srcFile.lastEntry;	
-    }
-    
-    /** Returns the unique StringEntry that holds source and translation of this entry. */
-    public StringEntry getStrEntry()
-    { 
-        return m_strEntry;	
-    }
-    
-    /** 
-     * Returns the source text 
-     * (shortcut for <code>getStrEntry().getSrcText()</code>). 
+
+    /**
+     * Returns the source text (shortcut for <code>getStrEntry().getSrcText()</code>).
      */
-    public String getSrcText()
-    {
-        return m_strEntry.getSrcText();
+    public String getSrcText() {
+        return src;
     }
-    
-    /** 
-     * Returns the translation 
-     * (shortcut for <code>getStrEntry().getTranslation()</code>). 
-     */
-    public String getTranslation()
-    {
-        return m_strEntry.getTranslation();
-    }
-    
-    /** 
-     * Sets the translation 
-     * (shortcut for <code>getStrEntry().setTranslation(t)</code>). 
-     */
-    protected int setTranslation(String t)
-    {
-        return m_strEntry.setTranslation(t);
-    }
-    
-    /** 
-     * Returns whether this entry is translated 
-     * (shortcut for <code>getStrEntry().isTranslated(t)</code>). 
-     */
-    public boolean isTranslated()
-    {
-        return m_strEntry.isTranslated();
-    }
-    
-    /** Returns the number of this entry is a project. */
-    public int entryNum()
-    { 
+
+    /** Returns the number of this entry in a project. */
+    public int entryNum() {
         return m_entryNum;
     }
-    
-    /** Holds information about the file this entry belongs to. */
-    private	ProjectFileData m_srcFile;
-    /** Holds the unique StringEntry of this segment. */
-    private StringEntry m_strEntry;
+
+    /** If entry with the same source already exist in project. */
+    public DUPLICATE getDuplicate() {
+        return duplicate;
+    }
+
     /** Holds the number of this entry in a project. */
     private int m_entryNum;
+
 }

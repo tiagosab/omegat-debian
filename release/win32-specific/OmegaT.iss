@@ -20,8 +20,9 @@ Source: "docs\*"; DestDir: "{app}\docs"; Flags: recursesubdirs
 Source: "images\*"; DestDir: "{app}\images"; Flags: recursesubdirs
 Source: "lib\*"; DestDir: "{app}\lib"; Flags: recursesubdirs
 Source: "native\*"; DestDir: "{app}\native"; Flags: recursesubdirs
+Source: "plugins\*"; DestDir: "{app}\plugins"; Flags: recursesubdirs
 Source: "OmegaT.exe"; DestDir: "{app}"
-Source: "OmegaT.l4J.ini"; DestDir: "{app}"
+Source: "OmegaT.l4J.ini"; DestDir: "{app}"; Flags: onlyifdoesntexist
 Source: "OmegaT.jar"; DestDir: "{app}"
 Source: "license.txt"; DestDir: "{app}"
 Source: "doc-license.txt"; DestDir: "{app}"
@@ -44,13 +45,17 @@ Source: "readme_ru.txt"; DestDir: "{app}"; Flags: isreadme; Languages: ru
 Source: "readme_sk.txt"; DestDir: "{app}"; Flags: isreadme; Languages: sk
 Source: "readme_sl.txt"; DestDir: "{app}"; Flags: isreadme; Languages: sl
 Source: "readme_sq.txt"; DestDir: "{app}"; Flags: isreadme; Languages: sq
+Source: "readme_sv.txt"; DestDir: "{app}"; Flags: isreadme; Languages: sv
 Source: "readme_tr.txt"; DestDir: "{app}"; Flags: isreadme; Languages: tr
 Source: "readme_zh_CN.txt"; DestDir: "{app}"; Flags: isreadme; Languages: zh_CN
 Source: "readme_zh_TW.txt"; DestDir: "{app}"; Flags: isreadme; Languages: zh_TW
 Source: "readme*.txt"; DestDir: "{app}";
 Source: "join.html"; DestDir: "{app}"
 Source: "index.html"; DestDir: "{app}"
-Source: "changes.txt"; DestDir: "{app}"
+Source: "changes.txt"; DestDir: "{app}"; Flags: isreadme;
+
+[UninstallDelete]
+Type: filesandordirs; Name: "{app}\plugins\"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
