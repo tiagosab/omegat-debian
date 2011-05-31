@@ -4,7 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
-               2009 Martin Fleurke, Alex Buloichik
+               2009 Martin Fleurke, Alex Buloichik, Didier Briel
                Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
@@ -27,8 +27,8 @@ package org.omegat;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -40,20 +40,22 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+import org.omegat.convert.ConvertConfigs;
 import org.omegat.core.Core;
 import org.omegat.core.CoreEvents;
 import org.omegat.core.data.ProjectFactory;
 import org.omegat.core.data.ProjectProperties;
 import org.omegat.core.data.RealProject;
-import org.omegat.core.data.StringEntry;
-import org.omegat.core.data.TransMemory;
+import org.omegat.core.data.SourceTextEntry;
+import org.omegat.core.data.TransEntry;
+import org.omegat.filters2.master.PluginUtils;
 import org.omegat.util.Log;
 import org.omegat.util.OConsts;
 import org.omegat.util.OStrings;
 import org.omegat.util.ProjectFileStorage;
 import org.omegat.util.RuntimePreferences;
+import org.omegat.util.StringUtil;
 import org.omegat.util.TMXWriter;
-import org.omegat.util.RuntimePreferences.PSEUDO_TRANSLATE_TYPE;
 
 import com.vlsolutions.swing.docking.DockingDesktop;
 
@@ -63,14 +65,15 @@ import com.vlsolutions.swing.docking.DockingDesktop;
  * @author Keith Godfrey
  * @author Martin Fleurke
  * @author Alex Buloichik
+ * @author Didier Briel
  */
 public class Main {
     /** Application execution mode. */
     enum RUN_MODE {
-        GUI, CONSOLE_TRANSLATE, CONSOLE_CREATEPSEUDOTRANSLATETMX;
+        GUI, CONSOLE_TRANSLATE, CONSOLE_CREATEPSEUDOTRANSLATETMX, CONSOLE_ALIGN;
         public static RUN_MODE parse(String s) {
             try {
-                return valueOf(s.toUpperCase().replace('-', '_'));
+                return valueOf(s.toUpperCase(Locale.ENGLISH).replace('-', '_'));
             } catch (Exception ex) {
                 // default mode
                 return GUI;
@@ -78,9 +81,24 @@ public class Main {
         }
     };
 
+    /**
+     * Choice of types of translation for all segments in the optional, special
+     * TMX file that contains all segments of the project.
+     */
+    enum PSEUDO_TRANSLATE_TYPE {
+        EQUAL, EMPTY;
+        public static PSEUDO_TRANSLATE_TYPE parse(String s) {
+            try {
+                return valueOf(s.toUpperCase(Locale.ENGLISH).replace('-', '_'));
+            } catch (Exception ex) {
+                // default mode
+                return EQUAL;
+            }
+        }
+    };
+
     /** Regexp for parse parameters. */
-    protected static final Pattern PARAM = Pattern
-            .compile("\\-\\-([A-Za-z\\-]+)(=(.+))?");
+    protected static final Pattern PARAM = Pattern.compile("\\-\\-([A-Za-z\\-]+)(=(.+))?");
 
     /** Project location for load on startup. */
     protected static File projectLocation = null;
@@ -129,30 +147,33 @@ public class Main {
             RuntimePreferences.setQuietMode(true);
         }
 
-        if (params.containsKey("pseudotranslatetmx")) {
-            RuntimePreferences.setPseudoTranslateTMXFile(params.get("pseudotranslatetmx"));
-            RuntimePreferences.setPseudoTranslateType(params.get("pseudotranslatetype"));
+        if (params.containsKey("disable-project-locking")) {
+            RuntimePreferences.setProjectLockingEnabled(false);
         }
 
-        Log.log("\n"
-                + // NOI18N
-                "==================================================================="
-                + // NOI18N
-                "\n" + // NOI18N
-                OStrings.getDisplayVersion() + // NOI18N
-                " (" + new Date() + ") " + // NOI18N
-                " Locale " + Locale.getDefault()); // NOI18N
+        Log.log("\n" + "===================================================================" + "\n"
+                + OStrings.getDisplayVersion() + " (" + new Date() + ") " + " Locale " + Locale.getDefault());
 
-        Log.logRB("LOG_STARTUP_INFO", System.getProperty("java.vendor"), System
-                .getProperty("java.version"), System.getProperty("java.home"));
+        Log.logRB("LOG_STARTUP_INFO", System.getProperty("java.vendor"), System.getProperty("java.version"),
+                System.getProperty("java.home"));
+
+        System.setProperty("http.user", OStrings.getDisplayVersion());
+
+        ConvertConfigs.convert();
+        PluginUtils.loadPlugins(params);
 
         switch (runMode) {
         case GUI:
             runGUI();
             break;
         case CONSOLE_TRANSLATE:
+            runConsoleTranslate();
+            break;
         case CONSOLE_CREATEPSEUDOTRANSLATETMX:
-            runConsoleTranslate(runMode);
+            runCreatePseudoTranslateTMX();
+            break;
+        case CONSOLE_ALIGN:
+            runConsoleAlign();
             break;
         }
     }
@@ -161,8 +182,11 @@ public class Main {
      * Execute standard GUI.
      */
     protected static void runGUI() {
-        Log.log("Docking Framework version: "
-                + DockingDesktop.getDockingFrameworkVersion());
+        // MacOSX-specific - they must be setted BEFORE any GUI calls
+        System.setProperty("apple.laf.useScreenMenuBar", "true");
+        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "OmegaT");
+
+        Log.log("Docking Framework version: " + DockingDesktop.getDockingFrameworkVersion());
         Log.log("");
         try {
             // Workaround for JDK bug 6389282 (OmegaT bug bug 1555809)
@@ -171,13 +195,6 @@ public class Main {
             UIManager.getInstalledLookAndFeels();
 
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-
-            // MacOSX-specific
-            System.setProperty("apple.laf.useScreenMenuBar", "true"); // NOI18N
-            System
-                    .setProperty(
-                            "com.apple.mrj.application.apple.menu.about.name",
-                            "OmegaT"); // NOI18N
         } catch (Exception e) {
             // do nothing
             Log.logErrorRB("MAIN_ERROR_CANT_INIT_OSLF");
@@ -193,8 +210,7 @@ public class Main {
 
         if (projectLocation != null) {
             try {
-                ProjectProperties props = ProjectFileStorage
-                        .loadProjectProperties(projectLocation);
+                ProjectProperties props = ProjectFileStorage.loadProjectProperties(projectLocation);
                 ProjectFactory.loadProject(props);
             } catch (Exception ex) {
                 showError(ex);
@@ -213,7 +229,7 @@ public class Main {
     /**
      * Execute in console mode for translate.
      */
-    protected static void runConsoleTranslate(RUN_MODE runMode) {
+    protected static void runConsoleTranslate() {
         Log.log("Console mode");
         Log.log("");
 
@@ -224,62 +240,80 @@ public class Main {
             showError(ex);
         }
         try {
-            System.out.println("Loading Project");
+            RealProject p = selectProjectConsoleMode(true);
 
-            // check if project okay
-            ProjectProperties projectProperties = null;
-            try {
-                projectProperties = ProjectFileStorage
-                        .loadProjectProperties(projectLocation);
-                if (!projectProperties.verifyProject()) {
-                    System.out.println("The project cannot be verified");
-                    System.exit(1);
+            System.out.println("Translating Project");
+
+            String sourceMask = params.get("source-pattern");
+            if (sourceMask != null)
+                p.compileProject(sourceMask);
+            else
+                p.compileProject(".*");
+
+            p.closeProject();
+            System.out.println("Finished");
+        } catch (Exception e) {
+            System.err.println("An error has occured: " + e.toString());
+            System.exit(1);
+        }
+    }
+
+    /**
+     * Execute in console mode for translate.
+     */
+    protected static void runCreatePseudoTranslateTMX() {
+        Log.log("Console mode");
+        Log.log("");
+
+        System.out.println("Initializing");
+        try {
+            Core.initializeConsole(params);
+        } catch (Throwable ex) {
+            showError(ex);
+        }
+        try {
+            RealProject p = selectProjectConsoleMode(true);
+
+            System.out.println("Create pseudo-translate TMX");
+
+            ProjectProperties m_config = p.getProjectProperties();
+            List<SourceTextEntry> entries = p.getAllEntries();
+            String pseudoTranslateTMXFilename = params.get("pseudotranslatetmx");
+            PSEUDO_TRANSLATE_TYPE pseudoTranslateType = PSEUDO_TRANSLATE_TYPE.parse(params
+                    .get("pseudotranslatetype"));
+
+            String fname;
+            if (pseudoTranslateTMXFilename != null && pseudoTranslateTMXFilename.length() > 0) {
+                if (!pseudoTranslateTMXFilename.endsWith(OConsts.TMX_EXTENSION)) {
+                    fname = pseudoTranslateTMXFilename + "." + OConsts.TMX_EXTENSION;
+                } else {
+                    fname = pseudoTranslateTMXFilename;
                 }
-            } catch (Exception ex) {
-                Log.logErrorRB(ex, "PP_ERROR_UNABLE_TO_READ_PROJECT_FILE");
-                System.out.println(OStrings.getString
-                        ("PP_ERROR_UNABLE_TO_READ_PROJECT_FILE"));
-                System.exit(1);
+
+            } else {
+                fname = "";
             }
 
-            RealProject p = new RealProject(projectProperties, false);
-            Core.setProject(p);
-
-            switch (runMode) {
-            case CONSOLE_TRANSLATE:
-                System.out.println("Translating Project");
-                p.compileProject();
-                break;
-            case CONSOLE_CREATEPSEUDOTRANSLATETMX:
-                System.out.println("Translating Project");
-
-                ProjectProperties m_config = p.getProjectProperties();
-                List<StringEntry> m_strEntryList = p.getUniqueEntries();
-                ArrayList<TransMemory> m_orphanedList = new ArrayList<TransMemory>();
-                String pseudoTranslateTMXFilename = RuntimePreferences.getPseudoTranslateTMXFile();
-                PSEUDO_TRANSLATE_TYPE pseudoTranslateType = RuntimePreferences.getPseudoTranslateType();
-
-                String fname;
-                if (pseudoTranslateTMXFilename != null && pseudoTranslateTMXFilename.length()>0) {
-                    if (!pseudoTranslateTMXFilename.endsWith(OConsts.TMX_EXTENSION)) {
-                        fname = pseudoTranslateTMXFilename+"."+OConsts.TMX_EXTENSION;
-                    } else {
-                        fname = pseudoTranslateTMXFilename;
-                    }
-                    
-                } else {
-                    fname="";
+            // prepare tmx
+            Map<String, TransEntry> data = new HashMap<String, TransEntry>();
+            for (SourceTextEntry ste : entries) {
+                switch (pseudoTranslateType) {
+                case EQUAL:
+                    data.put(ste.getSrcText(), new TransEntry(ste.getSrcText()));
+                    break;
+                case EMPTY:
+                    data.put(ste.getSrcText(), new TransEntry(""));
+                    break;
                 }
-                try {
-                    TMXWriter.buildTMXFile(fname, false, false, true, m_config, m_strEntryList, m_orphanedList, true, pseudoTranslateType);
-                } catch (IOException e) {
-                    Log.logErrorRB("CT_ERROR_CREATING_TMX");
-                    Log.log(e);
-                    throw new IOException(OStrings.getString("CT_ERROR_CREATING_TMX") +
-                            "\n" +                                                      // NOI18N
-                            e.getMessage());
-                }
-                break;
+            }
+
+            try {
+                // Write OmegaT-project-compatible TMX:
+                TMXWriter.buildTMXFile(fname, false, false, m_config, data);
+            } catch (IOException e) {
+                Log.logErrorRB("CT_ERROR_CREATING_TMX");
+                Log.log(e);
+                throw new IOException(OStrings.getString("CT_ERROR_CREATING_TMX") + "\n" + e.getMessage());
             }
 
             System.out.println("Finished");
@@ -289,16 +323,92 @@ public class Main {
         }
     }
 
+    public static void runConsoleAlign() {
+        Log.log("Alignment mode");
+        Log.log("");
+
+        if (projectLocation == null) {
+            System.out.println("Project location not defined");
+            System.exit(1);
+        }
+
+        String dir = params.get("alignDir");
+        if (dir == null) {
+            System.out.println("Translated files location not defined");
+            System.exit(1);
+        }
+
+        System.out.println("Initializing");
+        try {
+            Core.initializeConsole(params);
+        } catch (Throwable ex) {
+            showError(ex);
+        }
+        try {
+            RealProject p = selectProjectConsoleMode(false);
+
+            System.out.println("Align project against " + dir);
+
+            Map<String, TransEntry> data = p.align(p.getProjectProperties(), new File(dir));
+
+            String tmxFile = p.getProjectProperties().getProjectInternal() + "align.tmx";
+
+            TMXWriter.buildTMXFile(tmxFile, false, false, p.getProjectProperties(), data);
+
+            System.out.println("Finished");
+        } catch (Exception e) {
+            System.err.println("An error has occured: " + e.toString());
+            System.exit(1);
+        }
+    }
+
+    /**
+     * creates the project class and adds it to the Core. Loads the project if
+     * specified. An exit occurs on error loading the project. This method is
+     * for the different console modes, to prevent code duplication.
+     * 
+     * @param loadProject
+     *            load the project or not
+     * @return the project.
+     */
+    private static RealProject selectProjectConsoleMode(boolean loadProject) {
+        System.out.println("Loading Project");
+
+        // check if project okay
+        ProjectProperties projectProperties = null;
+        try {
+            projectProperties = ProjectFileStorage.loadProjectProperties(projectLocation);
+            if (!projectProperties.verifyProject()) {
+                System.out.println("The project cannot be verified");
+                System.exit(1);
+            }
+        } catch (Exception ex) {
+            Log.logErrorRB(ex, "PP_ERROR_UNABLE_TO_READ_PROJECT_FILE");
+            System.out.println(OStrings.getString("PP_ERROR_UNABLE_TO_READ_PROJECT_FILE"));
+            System.exit(1);
+        }
+
+        RealProject p = new RealProject(projectProperties);
+        if (loadProject)
+            p.loadProject();
+        Core.setProject(p);
+        return p;
+    }
+
     public static void showError(Throwable ex) {
+        String msg;
+        if (StringUtil.isEmpty(ex.getMessage())) {
+            msg = ex.getClass().getName();
+        } else {
+            msg = ex.getMessage();
+        }
         switch (runMode) {
         case GUI:
-            JOptionPane.showMessageDialog(JOptionPane.getRootFrame(), ex
-                    .getMessage(),
-                    OStrings.getString("STARTUP_ERRORBOX_TITLE"),
-                    JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(JOptionPane.getRootFrame(), msg,
+                    OStrings.getString("STARTUP_ERRORBOX_TITLE"), JOptionPane.ERROR_MESSAGE);
             break;
         case CONSOLE_TRANSLATE:
-            System.err.println(ex.getMessage());
+            System.err.println(msg);
             break;
         }
         System.exit(1);

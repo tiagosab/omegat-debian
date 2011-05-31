@@ -38,31 +38,7 @@ public class RuntimePreferences {
     /** Force use specified config dir. */
     private static String configDir;
 
-    /**
-     * Filename to use for creating a TMX that contains all segments in the project.
-     */
-    private static String pseudoTranslateTMXFile;
-
-    /**
-     * Choice of types of translation for all segments in the optional, special 
-     * TMX file that contains all segments of the project.
-     */
-    public enum PSEUDO_TRANSLATE_TYPE {
-        EQUAL, EMPTY;
-        public static PSEUDO_TRANSLATE_TYPE parse(String s) {
-            try {
-                return valueOf(s.toUpperCase().replace('-', '_'));
-            } catch (Exception ex) {
-                // default mode
-                return EQUAL;
-            }
-        }
-    };
-    /**
-     * Type of translation for all segments in the optional, special TMX file 
-     * that contains all segments of the project.
-     */
-    private static PSEUDO_TRANSLATE_TYPE pseudo_translate_type = PSEUDO_TRANSLATE_TYPE.EQUAL; 
+    private static boolean projectLockingEnabled = true;
 
     public static boolean isQuietMode() {
         return quietMode;
@@ -80,19 +56,11 @@ public class RuntimePreferences {
         configDir = v;
     }
 
-    public static void setPseudoTranslateTMXFile(String filename) {
-        pseudoTranslateTMXFile = filename;
+    public static boolean isProjectLockingEnabled() {
+        return projectLockingEnabled;
     }
 
-    public static String getPseudoTranslateTMXFile() {
-        return pseudoTranslateTMXFile;
-    }
-
-    public static void setPseudoTranslateType(String type) {
-        pseudo_translate_type = PSEUDO_TRANSLATE_TYPE.parse(type);
-    }
-    
-    public static PSEUDO_TRANSLATE_TYPE getPseudoTranslateType() {
-        return pseudo_translate_type; 
+    public static void setProjectLockingEnabled(boolean v) {
+        projectLockingEnabled = v;
     }
 }

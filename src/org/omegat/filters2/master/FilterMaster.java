@@ -8,7 +8,9 @@
                2006 Martin Wunderlich
                2006-2007 Didier Briel
                2008 Martin Fleurke, Didier Briel
-               2009 Didier Briel, Arno Peters
+               2009 Didier Briel, Arno Peters, Alex Buloichik
+               2010 Alex Buloichik
+               2011 Alex Buloichik, Didier Briel
 
                Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
@@ -26,228 +28,289 @@
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-**************************************************************************/
+ **************************************************************************/
 
 package org.omegat.filters2.master;
 
-import java.beans.ExceptionListener;
-import java.beans.XMLDecoder;
-import java.beans.XMLEncoder;
+import gen.core.filters.Files;
+import gen.core.filters.Filter;
+import gen.core.filters.Filter.Option;
+import gen.core.filters.Filters;
+
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.swing.JOptionPane;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 
-import org.omegat.core.Core;
 import org.omegat.filters2.AbstractFilter;
+import org.omegat.filters2.FilterContext;
+import org.omegat.filters2.IAlignCallback;
+import org.omegat.filters2.IFilter;
 import org.omegat.filters2.IParseCallback;
+import org.omegat.filters2.ITranslateCallback;
 import org.omegat.filters2.Instance;
 import org.omegat.filters2.TranslationException;
-import org.omegat.filters2.xtagqxp.XtagFilter;
-import org.omegat.filters2.hhc.HHCFilter2;
-import org.omegat.filters2.html2.HTMLFilter2;
-import org.omegat.filters2.latex.LatexFilter;
-import org.omegat.filters2.po.PoFilter;
-import org.omegat.filters2.subtitles.SrtFilter;
-import org.omegat.filters2.text.TextFilter;
-import org.omegat.filters2.text.bundles.ResourceBundleFilter;
-import org.omegat.filters2.text.ini.INIFilter;
-import org.omegat.filters3.xml.android.AndroidFilter;
-import org.omegat.filters3.xml.docbook.DocBookFilter;
-import org.omegat.filters3.xml.opendoc.OpenDocFilter;
-import org.omegat.filters3.xml.openxml.OpenXMLFilter;
-import org.omegat.filters3.xml.resx.ResXFilter;
-import org.omegat.filters3.xml.xhtml.XHTMLFilter;
-import org.omegat.filters3.xml.xliff.XLIFFFilter;
 import org.omegat.util.LFileCopy;
 import org.omegat.util.Language;
 import org.omegat.util.Log;
 import org.omegat.util.OStrings;
-import org.omegat.util.Preferences;
 import org.omegat.util.StaticUtils;
 
 /**
- * A master class that registers and handles all the filters.
- * Singleton - there can be only one instance of this class.
- *
+ * A master class that registers and handles all the filters. Singleton - there can be only one instance of
+ * this class.
+ * 
  * @author Maxym Mykhalchuk
  * @author Henry Pijffers
  * @author Martin Wunderlich
  * @author Didier Briel
  * @author Martin Fleurke
  * @author Arno Peters
+ * @author Alex Buloichik (alex73mail@gmail.com)
  */
-public class FilterMaster
-{
-	/** name of the filter configuration file */
-	private final static String FILE_FILTERS = "filters.conf";              // NOI18N
+public class FilterMaster {
+    /** name of the filter configuration file */
+    private final static String FILE_FILTERS = "filters.xml";
 
-    /** There was no version of file filters support (1.4.5 Beta 1 -- 1.6.0 RC12). */
+    private static final JAXBContext CONFIG_CTX;
+
+    /**
+     * There was no version of file filters support (1.4.5 Beta 1 -- 1.6.0 RC12).
+     */
     public static String INITIAL_VERSION = new String();
     /** File filters support of 1.6.0 RC12a: now upgrading the configuration. */
-    public static String OT160RC12a_VERSION = "1.6 RC12a";                      // NOI18N
-    public static String OT160FINAL_VERSION = "1.6.0";                          // NOI18N
-    public static String OT161_VERSION      = "1.6.1";                          // NOI18N
-    public static String OT170_VERSION      = "1.7.0";                          // NOI18N
+    public static String OT160RC12a_VERSION = "1.6 RC12a";
+    public static String OT160FINAL_VERSION = "1.6.0";
+    public static String OT161_VERSION = "1.6.1";
+    public static String OT170_VERSION = "1.7.0";
     /** Currently file filters support version. */
     public static String CURRENT_VERSION = "2.0";
 
-    /** Wrapper around filters storage in an XML file */
-    private Filters  filters;
-    /** Returns Wrapper around filters storage in an XML file */
-    public Filters getFilters()
-    {
-        return filters;
+    /** FilterMaster instance. */
+    private static FilterMaster master = null;
+
+    /** Config file. */
+    private File configFile = new File(StaticUtils.getConfigDir() + FILE_FILTERS);
+
+    /** Filters config stored in XML file. */
+    private Filters config;
+
+    /** Classes of all filters. */
+    private List<Class<IFilter>> filtersClasses;
+
+    static {
+        try {
+            CONFIG_CTX = JAXBContext.newInstance(Filters.class);
+        } catch (Exception ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
     }
-    
+
     /**
      * Create a new FilterMaster.
      */
-    private FilterMaster()
-    {
-        PluginUtils.loadPlugins();
-        if( configFile.exists() )
-            loadConfig();
-        else
-            filters = setupBuiltinFilters();
-        loadFilterClassesFromPlugins();
+    private FilterMaster() {
+        filtersClasses = new ArrayList<Class<IFilter>>();
+        filtersClasses.addAll((List)PluginUtils.getFilterClasses());
+
+        loadConfig();
+
+        addNewFiltersToConfig(config);
+
         saveConfig();
     }
-    
-    private static FilterMaster master = null;
+
+    /**
+     * Adds new filters(which was not exist in config yet) into config.
+     */
+    private void addNewFiltersToConfig(final Filters conf) {
+        for (Class<IFilter> fclass : filtersClasses) {
+            boolean found = false;
+            for (Filter fc : conf.getFilter()) {
+                if (fclass.getName().equals(fc.getClassName())) {
+                    // filter already exist in config
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                // filter not found in config
+                conf.getFilter().add(getDefaultSettingsFromFilter(fclass.getName()));
+            }
+        }
+    }
+
     /**
      * Returns the only instance of this class.
      */
-    public static FilterMaster getInstance()
-    {
-        if( master==null )
+    public static FilterMaster getInstance() {
+        if (master == null)
             master = new FilterMaster();
         return master;
     }
-    
+
+    /**
+     * Get filter's instance by filter class name.
+     * 
+     * @param classname
+     *            filter's class name
+     * @return filter instance
+     */
+    public IFilter getFilterInstance(final String classname) {
+        for (Class<IFilter> f : filtersClasses) {
+            if (f.getName().equals(classname)) {
+                try {
+                    return f.newInstance();
+                } catch (Exception ex) {
+                    Log.log(ex);
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * OmegaT core calls this method to load a source file.
-     *
-     * @param filename  The name of the source file to load.
-     * @param processedFiles The set of already processed files.
-     * @return          Whether the file was handled by one of OmegaT filters.
+     * 
+     * @param filename
+     *            The name of the source file to load.
+     * @return Whether the file was handled by one of OmegaT filters.
      * @see #translateFile(String, String, String)
      */
-    public boolean loadFile(String filename, Set<File> processedFiles, IParseCallback parseCallback)
-            throws IOException, TranslationException
-    {
-        try
-        {
-            LookupInformation lookup = lookupFilter(filename);
-            if( lookup==null )
+    public boolean loadFile(String filename, FilterContext fc, IParseCallback parseCallback)
+            throws IOException, TranslationException {
+        try {
+            LookupInformation lookup = lookupFilter(filename, fc);
+            if (lookup == null)
                 return false;
 
             File inFile = new File(filename);
-            String inEncoding = lookup.inEncoding;
-            AbstractFilter filterObject = lookup.filterObject;
-            
-            filterObject.setParseCallback(parseCallback);
-            
-            List<File> files = filterObject.processFile(inFile, inEncoding, null, null);
-            if (files!=null)
-                processedFiles.addAll(files);
-        }
-        catch( IOException ioe )
-        {
+            fc.setInEncoding(lookup.outFilesInfo.getSourceEncoding());
+            fc.setOutEncoding(lookup.outFilesInfo.getTargetEncoding());
+
+            IFilter filterObject = lookup.filterObject;
+
+            filterObject.parseFile(inFile, lookup.config, fc, parseCallback);
+        } catch (Exception ioe) {
             ioe.printStackTrace();
-            throw new IOException(filename + "\n" + ioe);                       // NOI18N
+            throw new IOException(filename + "\n" + ioe);
         }
         return true;
     }
-    
+
     /**
      * OmegaT core calls this method to translate a source file.
      * <ul>
-     * <li>OmegaT first looks through registered filter instances
-     *     to find filter(s) that can handle this file.
+     * <li>OmegaT first looks through registered filter instances to find filter(s) that can handle this file.
      * <li>Tests if filter(s) want to handle it.
      * <li>If the filter accepts the file,
      * <li>Filter is asked to process the file.
      * </ul>
-     * If no filter is found, that processes this file,
-     * we simply copy it to target folder.
+     * If no filter is found, that processes this file, we simply copy it to target folder.
      * 
-     * @param sourcedir The folder of the source inFile.
-     * @param filename  The name of the source inFile to process (only the part, relative to source folder).
-     * @param targetdir The folder to place the translated inFile to.
-     * @param processedFiles Set of all already processed files not to redo them again.
+     * @param sourcedir
+     *            The folder of the source inFile.
+     * @param filename
+     *            The name of the source inFile to process (only the part, relative to source folder).
+     * @param targetdir
+     *            The folder to place the translated inFile to.
+     * @param fc
+     *            Filter context.
      */
-    public void translateFile(String sourcedir, String filename, String targetdir, Set<File> processedFiles, IParseCallback parseCallback)
-            throws IOException, TranslationException
-    {        
-        LookupInformation lookup = lookupFilter(sourcedir+File.separator+filename);
-        if( lookup==null )
-        {
+    public void translateFile(String sourcedir, String filename, String targetdir, FilterContext fc,
+            ITranslateCallback translateCallback) throws IOException, TranslationException {
+        LookupInformation lookup = lookupFilter(sourcedir + File.separator + filename, fc);
+        if (lookup == null) {
             // The file is not supported by any of the filters.
             // Copying it
-            LFileCopy.copy(sourcedir+File.separator+filename,
-                    targetdir+File.separator+filename);
+            LFileCopy.copy(sourcedir + File.separator + filename, targetdir + File.separator + filename);
             return;
         }
-        
-        File inFile = new File(sourcedir+File.separator+filename);
-        String inEncoding = lookup.inEncoding;
-        
+
+        File inFile = new File(sourcedir + File.separator + filename);
+
         String name = inFile.getName();
-        String path = filename.substring(0, filename.length()-name.length());
-        
-        Instance instance = lookup.instance;
-        File outFile =
-                new File(
-                targetdir + File.separator +
-                path + File.separator +
-                constructTargetFilename(
-                instance.getSourceFilenameMask(),
-                name,
-                instance.getTargetFilenamePattern()));
-        String outEncoding = instance.getTargetEncoding();
-        
-        AbstractFilter filterObject = lookup.filterObject;
-        
-        filterObject.setParseCallback(parseCallback);
-        
-        List<File> files = filterObject.processFile(inFile, inEncoding, outFile, outEncoding);
-        if (files!=null)
-            processedFiles.addAll(files);
-    }
-    
-    class LookupInformation
-    {
-        public OneFilter filter;
-        public Instance instance;
-        public AbstractFilter filterObject;
-        public String inEncoding;
-        
-        public LookupInformation(OneFilter filter, Instance instance,
-                AbstractFilter filterObject, String inEncoding)
-        {
-            this.filter = filter;
-            this.instance = instance;
-            this.filterObject = filterObject;
-            this.inEncoding = inEncoding;
+        String path = filename.substring(0, filename.length() - name.length());
+
+        File outFile = new File(targetdir
+                + File.separator
+                + path
+                + File.separator
+                + constructTargetFilename(lookup.outFilesInfo.getSourceFilenameMask(), name,
+                        lookup.outFilesInfo.getTargetFilenamePattern(), fc.getTargetLang()));
+
+        fc.setInEncoding(lookup.outFilesInfo.getSourceEncoding());
+        fc.setOutEncoding(lookup.outFilesInfo.getTargetEncoding());
+
+        IFilter filterObject = lookup.filterObject;
+        try {
+            filterObject.translateFile(inFile, outFile, lookup.config, fc, translateCallback);
+        } catch (Exception ex) {
+            Log.log(ex);
         }
     }
-    
+
+    public void alignFile(String sourceDir, String fileName, String targetdir, FilterContext fc,
+            IAlignCallback alignCallback) throws Exception {
+
+        LookupInformation lookup = lookupFilter(sourceDir + File.separator + fileName, fc);
+        if (lookup == null) {
+            // The file is not supported by any of the filters.
+            // Skip it
+            return;
+        }
+
+        File inFile = new File(sourceDir + File.separator + fileName);
+
+        String name = inFile.getName();
+        String path = fileName.substring(0, fileName.length() - name.length());
+
+        File outFile = new File(targetdir
+                + File.separator
+                + path
+                + File.separator
+                + constructTargetFilename(lookup.outFilesInfo.getSourceFilenameMask(), name,
+                        lookup.outFilesInfo.getTargetFilenamePattern(), fc.getTargetLang()));
+
+        if (!outFile.exists()) {
+            // out file not exist - skip
+            return;
+        }
+
+        fc.setInEncoding(lookup.outFilesInfo.getSourceEncoding());
+        fc.setOutEncoding(lookup.outFilesInfo.getTargetEncoding());
+
+        IFilter filterObject = lookup.filterObject;
+        try {
+            filterObject.alignFile(inFile, outFile, lookup.config, fc, alignCallback);
+        } catch (Exception ex) {
+            Log.log(ex);
+        }
+    }
+
+    class LookupInformation {
+        public final Files outFilesInfo;
+        public final IFilter filterObject;
+        public final Map<String, String> config;
+
+        public LookupInformation(IFilter filterObject, Files outFilesInfo, Map<String, String> config) {
+            this.filterObject = filterObject;
+            this.outFilesInfo = outFilesInfo;
+            this.config = config;
+        }
+    }
+
     /**
-     * Gets the filter according to the source
-     * filename provided.
-     * In case of failing to find a filter to handle the file
-     * returns <code>null</code>.
+     * Gets the filter according to the source filename provided. In case of failing to find a filter to
+     * handle the file returns <code>null</code>.
      * 
      * In case of finding an appropriate filter it
      * <ul>
@@ -255,75 +318,71 @@ public class FilterMaster
      * <li>Creates a reader (use <code>OneFilter.getReader()</code> to get it)
      * <li>Checks whether the filter supports the file.
      * </ul>
-     * It <b>does not</b> check whether the filter supports the inFile,
-     * i.e. it doesn't call <code>isFileSupported</code>
+     * It <b>does not</b> check whether the filter supports the inFile, i.e. it doesn't call
+     * <code>isFileSupported</code>
      * 
      * 
-     * @param filename    The source filename.
+     * @param filename
+     *            The source filename.
      * @return The filter to handle the inFile.
      */
-    private LookupInformation lookupFilter(String filename)
-            throws TranslationException, IOException
-    {
+    private LookupInformation lookupFilter(String filename, FilterContext fc) throws TranslationException,
+            IOException {
         File inFile = new File(filename);
         String name = inFile.getName();
         String path = inFile.getParent();
-        if( path==null )
-            path = "";                                                          // NOI18N
-        
-        for(int i=0; i<getFilters().getFilter().length; i++)
-        {
-            OneFilter filter = getFilters().getFilter(i);
-            if( !filter.isOn() )
+        if (path == null)
+            path = "";
+
+        for (Filter f : config.getFilter()) {
+            if (!f.isEnabled()) {
                 continue;
-            for(int j=0; j<filter.getInstance().length; j++)
-            {
-                Instance instance = filter.getInstance(j);
-                if( matchesMask(name, instance.getSourceFilenameMask()) )
-                {
-                    AbstractFilter filterObject;
-                    filterObject = PluginUtils.instantiateFilter(filter);
-                    
-                    String inEncoding = instance.getSourceEncoding();
-                    if( !filterObject.isFileSupported(inFile, inEncoding) )
-                    {
-                        break;
+            }
+            for (Files ff : f.getFiles()) {
+                if (matchesMask(name, ff.getSourceFilenameMask())) {
+                    IFilter filterObject;
+                    filterObject = getFilterInstance(f.getClassName());
+
+                    if (filterObject != null) {
+                        fc.setInEncoding(ff.getSourceEncoding());
+                        fc.setOutEncoding(ff.getTargetEncoding());
+                        // only for exist filters
+                        Map<String, String> config = forFilter(f.getOption());
+                        if (!filterObject.isFileSupported(inFile, config, fc)) {
+                            break;
+                        }
+
+                        return new LookupInformation(filterObject, ff, config);
                     }
-                    
-                    return new LookupInformation(filter, instance, filterObject, inEncoding);
                 }
             }
         }
         return null;
     }
-    
-    
+
     private static List<String> supportedEncodings = null;
+
     /**
-     * Queries JRE for the list of supported encodings.
-     * Also adds the human name for no/automatic inEncoding.
+     * Queries JRE for the list of supported encodings. Also adds the human name for no/automatic inEncoding.
      * 
      * 
      * @return names of all the encodings in an array
      */
-    public static List<String> getSupportedEncodings()
-    {
-        if( supportedEncodings==null )
-        {
+    public static List<String> getSupportedEncodings() {
+        if (supportedEncodings == null) {
             supportedEncodings = new ArrayList<String>();
             supportedEncodings.add(AbstractFilter.ENCODING_AUTO_HUMAN);
             supportedEncodings.addAll(Charset.availableCharsets().keySet());
         }
         return supportedEncodings;
     }
-    
-    //////////////////////////////////////////////////////////////////////////
+
+    // ////////////////////////////////////////////////////////////////////////
     // Filters
-    //////////////////////////////////////////////////////////////////////////
-    
+    // ////////////////////////////////////////////////////////////////////////
+
     /**
-     * Reverts Filter Configuration to Default values.
-     * Basically
+     * Reverts Filter Configuration to Default values. Basically
      * <ul>
      * <li>Sets up built-in filters
      * <li>Reloads the plugins
@@ -331,321 +390,75 @@ public class FilterMaster
      * <li>Saves the configuration
      * </ul>
      */
-    public void revertFiltersConfigToDefaults()
-    {
-        filters = setupBuiltinFilters();
-        PluginUtils.loadPlugins();
-        loadFilterClassesFromPlugins();
-        saveConfig();
+    public Filters createDefaultFiltersConfig() {
+        Filters c = new Filters();
+        addNewFiltersToConfig(c);
+        return c;
     }
-    
-    /** XML file with filters configuration */
-    private File configFile = new File(StaticUtils.getConfigDir() + FILE_FILTERS);
-    
-    /**
-     * My Own Class to listen to exceptions,
-     * occured while loading filters configuration.
-     */
-    class MyExceptionListener implements ExceptionListener
-    {
-        private List<Exception> exceptionsList = new ArrayList<Exception>();
-        private boolean exceptionOccured = false;
-        public void exceptionThrown(Exception e)
-        {
-            exceptionOccured = true;
-            exceptionsList.add(e);
-        }
-        
-        /**
-         * Returns whether any exceptions occured.
-         */
-        public boolean isExceptionOccured()
-        {
-            return exceptionOccured;
-        }
-        /**
-         * Returns the list of occured exceptions.
-         */
-        public List<Exception> getExceptionsList()
-        {
-            return exceptionsList;
-        }
-    }
-    
-    /**
-     * Loads information about the filters from an XML file.
-     * If there's an error loading a file, it calls <code>setupDefaultFilters</code>.
-     */
-    public void loadConfig()
-    {
-        try
-        {
-            MyExceptionListener myel = new MyExceptionListener();
-            XMLDecoder xmldec = new XMLDecoder(new FileInputStream(configFile), this, myel);
-            filters = (Filters)xmldec.readObject();
-            xmldec.close();
-            
-            if( myel.isExceptionOccured() )
-            {
-                StringBuffer sb = new StringBuffer();
-                for(Exception ex : myel.getExceptionsList())
-                {
-                    sb.append("    ");                                          // NOI18N
-                    sb.append(ex);
-                    sb.append("\n");                                            // NOI18N
-                }
-                throw new Exception("Exceptions occured while loading file filters:\n"+sb.toString()); // NOI18N
-            }
-            
-            checkIfAllFilterPluginsAreAvailable();
-            
-            // checking the version
-            if (CURRENT_VERSION.compareTo(Preferences.getPreference(Preferences.FILTERS_VERSION))>0)
-            {
-                // yep, the config file with filters settings is of the older version
 
-                // initing defaults
-                Filters defaults = setupBuiltinFilters();
-                // and merging them into loaded settings
-                filters = upgradeFilters(filters, defaults);
-            }
+    /**
+     * Loads information about the filters from an XML file. If there's an error loading a file, it calls
+     * <code>setupDefaultFilters</code>.
+     */
+    public void loadConfig() {
+        if (!configFile.exists()) {
+            config = new Filters();
+            return;
         }
-        catch( Exception e )
-        {
+        try {
+            Unmarshaller unm = CONFIG_CTX.createUnmarshaller();
+            config = (Filters) unm.unmarshal(configFile);
+        } catch (Exception e) {
             Log.logErrorRB("FILTERMASTER_ERROR_LOADING_FILTERS_CONFIG");
             Log.log(e);
-            filters = setupBuiltinFilters();
+            config = new Filters();
         }
     }
-    
 
-    /** Upgrades current filters settings using current defaults. */
-    private Filters upgradeFilters(Filters filters, Filters defaults)
-    {
-        // upgrade if filters version is from before 1.6 RC12a/1.6.0/1.6.1
-        String filtersVersion = Preferences.getPreference(Preferences.FILTERS_VERSION);
-        if (   !filtersVersion.equals(OT160FINAL_VERSION) // FIX: this is getting messier with each version...
-            && !filtersVersion.equals(OT161_VERSION)
-            && (filtersVersion.compareTo(OT160RC12a_VERSION) < 0))
-        {
-            // removing old OO filter but moving all its instances to new OpenDoc one
-            for (int i = 0; i < filters.getFilter().length; i++)
-            {
-                OneFilter oo = filters.getFilter(i);
-                if (oo.getClassName().equals("org.omegat.filters2.xml.openoffice.OOFilter")) // NOI18N
-                {
-                    OneFilter opendoc = new OneFilter(new OpenDocFilter(), false);
-                    for (int j = 0; j < oo.getInstance().length; j++)
-                    {
-                        Instance ooi = oo.getInstance(j);
-                        for (int k = 0; k < opendoc.getInstance().length; k++)
-                        {
-                            Instance odi = opendoc.getInstance(k);
-                            if (odi.getSourceFilenameMask().equals(ooi.getSourceFilenameMask()))
-                            {
-                                opendoc.setInstance(k, ooi);
-                                break;
-                            }
-                        }
-                    }
-                    filters.setFilter(i, opendoc);
-                    break;
-                }
-            }
-        }
-
-        // now adding those filters from defaults which appeared in new version only
-        Set<String> existing = new HashSet<String>();
-        for (int i = 0; i < filters.getFilter().length; i++)
-            existing.add(filters.getFilter(i).getClassName());
-        for (int i = 0; i < defaults.getFilter().length; i++)
-        {
-            OneFilter deffilter = defaults.getFilter(i);
-            if (!existing.contains(deffilter.getClassName()))
-                filters.addFilter(deffilter);
-        }
-
-        return filters;
-    }
-    
-    /**
-     * Goes through the list of loaded plugins to see if
-     * all the filters that are there in config file are present.
-     */
-    private void checkIfAllFilterPluginsAreAvailable()
-    {
-        ClassLoader cl = PluginUtils.getPluginsClassloader();
-        List<List<Object>> plugins = PluginUtils.getPlugins();
-        
-        int k=0;
-        while( k<filters.filtersSize() )
-        {
-            OneFilter onefilter = filters.getFilter(k);
-            if( !onefilter.isFromPlugin() )
-            {
-                k++;
-                continue;
-            }
-            
-            for(List<Object> filterList : plugins)
-            {
-                for(int j=1; j<filterList.size(); j++)
-                {
-                    String classname = (String)filterList.get(j);
-                    if( onefilter.getClass().getName().equals(classname) )
-                    {
-                        // trying to create
-                        try
-                        {
-                            Class<?> filter_class = cl.loadClass(classname);
-                            Constructor<?> filter_constructor = filter_class.getConstructor((Class[])null);
-                            Object filter = filter_constructor.newInstance((Object[])null);
-                            if( filter instanceof AbstractFilter )
-                            {
-                                // OK
-                                k++;
-                                continue;
-                            }
-                        }
-                        catch( Exception e )
-                        {
-                            // couldn't load one of filters
-                            // removing it
-                            filters.removeFilter(k);
-                            continue;
-                        }
-                    }
-                }
-            }
-            
-            // if we are here, it means that there's no such filter class
-            // in all the plugins currently present
-            // removing it
-            filters.removeFilter(k);
-        }
-    }
-    
-    /**
-     * Initializes Filter Master defaults
-     * by re-creating all information about built-in file filters.
-     */
-    private Filters setupBuiltinFilters()
-    {
-        Filters res = new Filters();
-        res.addFilter(new OneFilter(new AndroidFilter(), false));
-        res.addFilter(new OneFilter(new TextFilter(), false));
-        res.addFilter(new OneFilter(new LatexFilter(), false));
-        res.addFilter(new OneFilter(new PoFilter(), false));
-        res.addFilter(new OneFilter(new ResourceBundleFilter(), false));
-        res.addFilter(new OneFilter(new XHTMLFilter(), false));
-        res.addFilter(new OneFilter(new HTMLFilter2(), false));
-        res.addFilter(new OneFilter(new HHCFilter2(), false));
-        res.addFilter(new OneFilter(new INIFilter(), false));
-        res.addFilter(new OneFilter(new DocBookFilter(), false));
-        res.addFilter(new OneFilter(new OpenDocFilter(), false));
-        res.addFilter(new OneFilter(new OpenXMLFilter(), false));
-        res.addFilter(new OneFilter(new XLIFFFilter(), false));        
-        res.addFilter(new OneFilter(new SrtFilter(), false));
-        res.addFilter(new OneFilter(new XtagFilter(), false));   
-        res.addFilter(new OneFilter(new ResXFilter(), false));
-        return res;
-    }
-    
-    /**
-     * Loads filter classes from plugins.
-     * <p>
-     * Filter plugins should be situated in &lt;OmegaT-install-dir&gt;/plugins,
-     * and be packed as JAR files with manifest stating
-     * <pre> OmegaT-Plugin: true </pre>
-     * and then for each filter
-     * <pre> Name: the.package.name.TheFilterName
-     * OmegaT-Filter: true</pre> for each filter in a plugin
-     * (plugin may have more than one filter).
-     */
-    private void loadFilterClassesFromPlugins()
-    {
-        ClassLoader cl = PluginUtils.getPluginsClassloader();
-        List<List<Object>> plugins = PluginUtils.getPlugins();
-        
-        for(int i=0; i<plugins.size(); i++)
-        {
-            List<Object> filterList = plugins.get(i);
-            for(int j=1; j<filterList.size(); j++)
-            {
-                try
-                {
-                    Class<?> filter_class = cl.loadClass((String)filterList.get(j));
-                    Constructor<?> filter_constructor = filter_class.getConstructor((Class[])null);
-                    Object filter = filter_constructor.newInstance((Object[])null);
-                    if( filter instanceof AbstractFilter )
-                    {
-                        OneFilter one_filter = new OneFilter((AbstractFilter)filter, true);
-                        filters.addFilter(one_filter);
-                    }
-                }
-                catch( Exception e )
-                {
-                    // couldn't load one of filters
-                    // eat (almost) silently
-                    Log.logErrorRB("FILTERMASTER_ERROR_LOADING_FILTER",
-                        new Object[]{filterList.get(j), ((URL)filterList.get(0)).getFile()});
-                }
-            }
-        }
-    }
-    
     /**
      * Saves information about the filters to an XML file.
      */
-    public void saveConfig()
-    {
-        try
-        {
-            XMLEncoder xmlenc = new XMLEncoder(new FileOutputStream(configFile));
-            xmlenc.writeObject(filters);
-            xmlenc.close();
-            Preferences.setPreference(Preferences.FILTERS_VERSION, CURRENT_VERSION);
-        }
-        catch( FileNotFoundException fnfe )
-        {
+    public void saveConfig() {
+        try {
+            Marshaller m = CONFIG_CTX.createMarshaller();
+            m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            m.marshal(config, configFile);
+        } catch (Exception e) {
             Log.logErrorRB("FILTERMASTER_ERROR_SAVING_FILTERS_CONFIG");
-            Log.log(fnfe);
+            Log.log(e);
             JOptionPane.showMessageDialog(null,
-                    OStrings.getString("FILTERMASTER_ERROR_SAVING_FILTERS_CONFIG") + "\n" + fnfe,
+                    OStrings.getString("FILTERMASTER_ERROR_SAVING_FILTERS_CONFIG") + "\n" + e,
                     OStrings.getString("ERROR_TITLE"), JOptionPane.ERROR_MESSAGE);
         }
     }
-    
-    
-    //////////////////////////////////////////////////////////////////////////
+
+    // ////////////////////////////////////////////////////////////////////////
     // Static Utility Methods
-    //////////////////////////////////////////////////////////////////////////
-    
+    // ////////////////////////////////////////////////////////////////////////
+
     /**
-     * Whether the mask matches the filename.
-     * Filename should be "name.ext", without path.
-     *
-     * @param filename The filename to check
-     * @param mask The mask, against which the filename is tested
+     * Whether the mask matches the filename. Filename should be "name.ext", without path.
+     * 
+     * @param filename
+     *            The filename to check
+     * @param mask
+     *            The mask, against which the filename is tested
      * @return Whether the mask matches the filename.
      */
-    private boolean matchesMask(String filename, String mask)
-    {
-        mask = mask.replaceAll("\\.", "\\\\.");                                   // NOI18N
-        mask = mask.replaceAll("\\*", ".*");                                    // NOI18N
-        mask = mask.replaceAll("\\?", ".");                                     // NOI18N
-        return filename.matches("(?iu)"+mask);                                  // NOI18N
+    private boolean matchesMask(String filename, String mask) {
+        mask = mask.replaceAll("\\.", "\\\\.");
+        mask = mask.replaceAll("\\*", ".*");
+        mask = mask.replaceAll("\\?", ".");
+        return filename.matches("(?iu)" + mask);
     }
-    
+
     /**
-     * Construct a target filename according to pattern from a file's name.
-     * Filename should be "name.ext", without path.
+     * Construct a target filename according to pattern from a file's name. Filename should be "name.ext",
+     * without path.
      * <p>
-     * Output filename pattern is pretty complex.
-     * <br>
-     * It may consist of normal characters and some substituted variables.
-     * They have the format <code>${variableName}</code> and are case insensitive.
-     * <br>
+     * Output filename pattern is pretty complex. <br>
+     * It may consist of normal characters and some substituted variables. They have the format
+     * <code>${variableName}</code> and are case insensitive. <br>
      * There're such variables:
      * <ul>
      * <li><code>${filename}</code> - full filename of the input file, both name and extension (default)
@@ -654,14 +467,12 @@ public class FilterMaster
      * <li><code>${targetLocale}</code> - target locale code (of a form "xx_YY")
      * <li><code>${targetLanguage}</code> - the target language and country code together (of a form "XX-YY")
      * <li><code>${targetLanguageCode}</code> - the target language only ("XX")
-     * <li><code>${targetCoutryCode}</code> - the target country only ("YY")
+     * <li><code>${targetCountryCode}</code> - the target country only ("YY")
      * </ul>
      * <p>
-     * Most file filters will use default "<code>${filename}</code>,
-     * that leads to the name of translated file being the same as
-     * the name of source file. But for example the Java(TM) Resource Bundles file filter
-     * will have the pattern equal to
-     * "<code>${nameonly}_${targetlanguage}.${extension}</code>".
+     * Most file filters will use default "<code>${filename}</code>, that leads to the name of translated file
+     * being the same as the name of source file. But for example the Java(TM) Resource Bundles file filter
+     * will have the pattern equal to "<code>${nameonly}_${targetlanguage}.${extension}</code> ".
      * <p>
      * E.g. if you have
      * <ul>
@@ -673,69 +484,167 @@ public class FilterMaster
      * <li><code>${nameOnly}</code> will be equal to "thisisfile"
      * <li>and <code>${extension}</code> - "ext1.ext2"
      * </ul>
-     *
-     * @param filename Filename to change
-     * @param pattern Pattern, according to which we change the filename
+     * 
+     * @param filename
+     *            Filename to change
+     * @param pattern
+     *            Pattern, according to which we change the filename
      * @return The changed filename
      */
-    private String constructTargetFilename(String sourceMask, String filename, String pattern)
-    {
+    private String constructTargetFilename(String sourceMask, String filename, String pattern,
+            Language targetLang) {
         int lastStarPos = sourceMask.lastIndexOf('*');
         int dot = 0;
-        if( lastStarPos>=0 )
-        {
+        if (lastStarPos >= 0) {
             // bugfix #1204740
             // so where's the dot next to the star
-            int lastDotPos=sourceMask.indexOf('.', lastStarPos);
+            int lastDotPos = sourceMask.indexOf('.', lastStarPos);
             // counting chars after the dot
-            int extlength=sourceMask.length()-lastDotPos;
+            int extlength = sourceMask.length() - lastDotPos;
             // going forward this many chars
             // and finding the dot we looked for
-            dot = filename.length()-extlength;
-        }
-        else
-        {
+            dot = filename.length() - extlength;
+        } else {
             dot = filename.lastIndexOf('.');
         }
-        
+
         String nameOnly = filename;
-        String extension = "";                                                  // NOI18N
-        if( dot>=0 )
-        {
+        String extension = "";
+        if (dot >= 0) {
             nameOnly = filename.substring(0, dot);
-            extension = filename.substring(dot+1);
+            extension = filename.substring(dot + 1);
         }
-        
+
         String res = pattern;
-        res = res.replaceAll(targetRegexer(AbstractFilter.TFP_FILENAME),
-                filename);
-        res = res.replaceAll(targetRegexer(AbstractFilter.TFP_NAMEONLY),
-                nameOnly);
-        res = res.replaceAll(targetRegexer(AbstractFilter.TFP_EXTENSION),
-                extension);
-        
-        
-        Language targetLang = Core.getProject().getProjectProperties().getTargetLanguage();
-        
-        res = res.replaceAll(targetRegexer(AbstractFilter.TFP_TARGET_LOCALE),
-                targetLang.getLocaleCode());
-        res = res.replaceAll(targetRegexer(AbstractFilter.TFP_TARGET_LANGUAGE),
-                targetLang.getLanguage());
-        res = res.replaceAll(targetRegexer(AbstractFilter.TFP_TARGET_LANG_CODE),
-                targetLang.getLanguageCode());
-        res = res.replaceAll(targetRegexer(AbstractFilter.TFP_TARGET_COUNTRY_CODE),
-                targetLang.getCountryCode());
-        
+        res = res.replace(AbstractFilter.TFP_FILENAME, filename);
+        res = res.replace(AbstractFilter.TFP_NAMEONLY, nameOnly);
+        res = res.replace(AbstractFilter.TFP_EXTENSION, extension);
+
+        res = res.replace(AbstractFilter.TFP_TARGET_LOCALE, targetLang.getLocaleCode());
+        res = res.replace(AbstractFilter.TFP_TARGET_LANGUAGE, targetLang.getLanguage());
+        res = res.replace(AbstractFilter.TFP_TARGET_LANG_CODE, targetLang.getLanguageCode());
+        res = res.replace(AbstractFilter.TFP_TARGET_COUNTRY_CODE, targetLang.getCountryCode());
+        // Replace also old variable spelling
+        res = res.replace(AbstractFilter.TFP_TARGET_COUTRY_CODE, targetLang.getCountryCode());
+
         return res;
     }
-    
-    private String targetRegexer(String tfp)
-    {
-        String pattern = tfp;
-        pattern = pattern.replaceAll("\\$", "\\\\\\$");                         // NOI18N
-        pattern = pattern.replaceAll("\\{", "\\\\{");                           // NOI18N
-        pattern = pattern.replaceAll("\\}", "\\\\}");                           // NOI18N
-        pattern = "(?i)"+pattern;                                               // NOI18N
-        return pattern;
+
+    /**
+     * Set new config. Used by filter's editor.
+     * 
+     * @param config
+     *            new config
+     */
+    public void setConfig(final Filters config) {
+        this.config = config;
+    }
+
+    /**
+     * Clone config for editing
+     * 
+     * @return new config instance
+     */
+    public Filters cloneConfig() {
+        Filters c = new Filters();
+        for (Filter f : config.getFilter()) {
+            c.getFilter().add(cloneFilter(f));
+        }
+        return c;
+    }
+
+    /**
+     * Clone one filter's config for editing.
+     * 
+     * @param f
+     *            one filter's config
+     * @return new config instance
+     */
+    public Filter cloneFilter(Filter filter) {
+        Filter f = new Filter();
+        f.setClassName(filter.getClassName());
+        f.setEnabled(filter.isEnabled());
+        for (Files ff : filter.getFiles()) {
+            f.getFiles().add(cloneFiles(ff));
+        }
+        for (Option o : filter.getOption()) {
+            Option fo = new Option();
+            fo.setName(o.getName());
+            fo.setValue(o.getValue());
+            f.getOption().add(fo);
+        }
+        return f;
+    }
+
+    /**
+     * Clone one filter's instance config for editing.
+     * 
+     * @param f
+     *            new filter's instance config
+     * @return new config instance
+     */
+    public Files cloneFiles(Files files) {
+        Files ff = new Files();
+        ff.setSourceEncoding(files.getSourceEncoding());
+        ff.setSourceFilenameMask(files.getSourceFilenameMask());
+        ff.setTargetEncoding(files.getTargetEncoding());
+        ff.setTargetFilenamePattern(files.getTargetFilenamePattern());
+        return ff;
+    }
+
+    /**
+     * Create default filter's config.
+     * 
+     * @param filterClassname
+     *            filter's classname
+     * @return default filter's config
+     */
+    public Filter getDefaultSettingsFromFilter(final String filterClassname) {
+        IFilter f = getFilterInstance(filterClassname);
+        Filter fc = new Filter();
+        fc.setClassName(f.getClass().getName());
+        fc.setEnabled(true);
+        for (Instance ins : f.getDefaultInstances()) {
+            Files ff = new Files();
+            ff.setSourceEncoding(ins.getSourceEncoding());
+            ff.setSourceFilenameMask(ins.getSourceFilenameMask());
+            ff.setTargetEncoding(ins.getTargetEncoding());
+            ff.setTargetFilenamePattern(ins.getTargetFilenamePattern());
+            fc.getFiles().add(ff);
+        }
+        return fc;
+    }
+
+    /**
+     * Convert options from xml for filter usage.
+     * 
+     * @param options
+     *            xml options
+     * @return options for filter usage
+     */
+    public static Map<String, String> forFilter(List<Option> options) {
+        final Map<String, String> result = new TreeMap<String, String>();
+        for (Option opt : options) {
+            result.put(opt.getName(), opt.getValue());
+        }
+        return result;
+    }
+
+    /**
+     * Convert options to xml from map.
+     * 
+     * @param f
+     *            filter
+     * @param newOptions
+     *            options
+     */
+    public static void setOptions(Filter f, Map<String, String> newOptions) {
+        f.getOption().clear();
+        for (Map.Entry<String, String> en : newOptions.entrySet()) {
+            Filter.Option opt = new Filter.Option();
+            opt.setName(en.getKey());
+            opt.setValue(en.getValue());
+            f.getOption().add(opt);
+        }
     }
 }

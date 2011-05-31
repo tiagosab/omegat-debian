@@ -44,8 +44,8 @@ import javax.swing.text.html.HTMLDocument;
 
 import org.omegat.core.Core;
 import org.omegat.core.CoreEvents;
+import org.omegat.core.data.IProject;
 import org.omegat.core.data.SourceTextEntry;
-import org.omegat.core.data.StringEntry;
 import org.omegat.core.dictionaries.DictionariesManager;
 import org.omegat.core.dictionaries.DictionaryEntry;
 import org.omegat.core.events.IEditorEventListener;
@@ -69,17 +69,17 @@ public class DictionariesTextArea extends EntryInfoPane<List<DictionaryEntry>> {
 
     protected final List<String> displayedWords = new ArrayList<String>();
 
+    protected ITokenizer tokenizer;
+
     public DictionariesTextArea() {
         super(true);
 
         setContentType("text/html");
-        ((HTMLDocument)getDocument()).setPreservesUnknownTags(false);
+        ((HTMLDocument) getDocument()).setPreservesUnknownTags(false);
 
         // setEditable(false);
-        String title = OStrings
-                .getString("GUI_MATCHWINDOW_SUBWINDOWTITLE_Dictionary");
-        Core.getMainWindow().addDockable(
-                new DockableScrollPane("DICTIONARY", title, this, true));
+        String title = OStrings.getString("GUI_MATCHWINDOW_SUBWINDOWTITLE_Dictionary");
+        Core.getMainWindow().addDockable(new DockableScrollPane("DICTIONARY", title, this, true));
 
         addMouseListener(mouseCallback);
 
@@ -93,13 +93,16 @@ public class DictionariesTextArea extends EntryInfoPane<List<DictionaryEntry>> {
     @Override
     protected void onProjectOpen() {
         clear();
-        manager.start(Core.getProject().getProjectProperties().getDictRoot());
+        IProject project = Core.getProject();
+        tokenizer = project.getSourceTokenizer();
+        manager.start(project.getProjectProperties().getDictRoot());
     }
 
     @Override
     protected void onProjectClose() {
         clear();
         manager.stop();
+        tokenizer = null;
     }
 
     /** Clears up the pane. */
@@ -123,8 +126,7 @@ public class DictionariesTextArea extends EntryInfoPane<List<DictionaryEntry>> {
             if (el != null) {
                 try {
                     // rectangle to be visible
-                    Rectangle rect = getUI().modelToView(this,
-                            el.getStartOffset());
+                    Rectangle rect = getUI().modelToView(this, el.getStartOffset());
                     // show 2 lines
                     if (rect != null) {
                         rect.height *= 2;
@@ -138,7 +140,7 @@ public class DictionariesTextArea extends EntryInfoPane<List<DictionaryEntry>> {
     }
 
     @Override
-    protected void startSearchThread(StringEntry newEntry) {
+    protected void startSearchThread(SourceTextEntry newEntry) {
         new DictionaryEntriesSearchThread(newEntry).start();
     }
 
@@ -148,15 +150,21 @@ public class DictionariesTextArea extends EntryInfoPane<List<DictionaryEntry>> {
     public void refresh() {
         SourceTextEntry ste = Core.getEditor().getCurrentEntry();
         if (ste != null) {
-            startSearchThread(ste.getStrEntry());
+            startSearchThread(ste);
         }
     }
 
     @Override
-    protected void setFoundResult(final List<DictionaryEntry> data) {
+    protected void setFoundResult(final SourceTextEntry se, final List<DictionaryEntry> data) {
         UIThreadsUtil.mustBeSwingThread();
 
         displayedWords.clear();
+
+        if (data == null) {
+            setText("");
+            return;
+        }
+
         StringBuilder txt = new StringBuilder();
         boolean wasPrev = false;
         int i = 0;
@@ -190,11 +198,9 @@ public class DictionariesTextArea extends EntryInfoPane<List<DictionaryEntry>> {
                 for (int i = 0; i < displayedWords.size(); i++) {
                     Element el = doc.getElement(Integer.toString(i));
                     if (el != null) {
-                        if (el.getStartOffset() <= mousepos
-                                && el.getEndOffset() >= mousepos) {
+                        if (el.getStartOffset() <= mousepos && el.getEndOffset() >= mousepos) {
                             final String w = displayedWords.get(i);
-                            String hideW = StaticUtils.format(OStrings
-                                    .getString("DICTIONARY_HIDE"), w);
+                            String hideW = StaticUtils.format(OStrings.getString("DICTIONARY_HIDE"), w);
                             JMenuItem item = popup.add(hideW);
                             item.addActionListener(new ActionListener() {
                                 public void actionPerformed(ActionEvent e) {
@@ -212,26 +218,28 @@ public class DictionariesTextArea extends EntryInfoPane<List<DictionaryEntry>> {
     /**
      * Thread for search data in dictionaries.
      */
-    public class DictionaryEntriesSearchThread extends
-            EntryInfoSearchThread<List<DictionaryEntry>> {
+    public class DictionaryEntriesSearchThread extends EntryInfoSearchThread<List<DictionaryEntry>> {
         protected final String src;
+        protected final ITokenizer tok;
 
-        public DictionaryEntriesSearchThread(final StringEntry newEntry) {
+        public DictionaryEntriesSearchThread(final SourceTextEntry newEntry) {
             super(DictionariesTextArea.this, newEntry);
             src = newEntry.getSrcText();
+            tok = tokenizer;
         }
 
         @Override
         protected List<DictionaryEntry> search() {
-            Token[] tokenList = Core.getTokenizer().tokenizeWords(src,
-                    ITokenizer.StemmingMode.NONE);
+            if (tok == null) {
+                return null;
+            }
+            Token[] tokenList = tok.tokenizeWords(src, ITokenizer.StemmingMode.NONE);
             Set<String> words = new TreeSet<String>();
             for (Token tok : tokenList) {
                 if (isEntryChanged()) {
                     return null;
                 }
-                String w = src.substring(tok.getOffset(), tok.getOffset()
-                        + tok.getLength());
+                String w = src.substring(tok.getOffset(), tok.getOffset() + tok.getLength());
 
                 words.add(w);
             }

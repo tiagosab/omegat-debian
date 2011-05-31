@@ -286,69 +286,123 @@
 
       <tr bgcolor="#FFFFFF">
         <td colspan="3">
-          <p><strong>El menú Edita conté els elements següents:</strong></p>
-        </td>
-      </tr>
+          <p>El menú <strong>Edita</strong> conté les dreceres següents:</p>
 
-      <tr bgcolor="#DDDDDD">
-        <td width="23%">
-          <p><code>Desfés l'última acció</code></p>
+      </td></tr><tr bgcolor="#DDDDDD">
+        <td>
+          <p>Desfés l'última acció</p>
         </td>
 
-        <td width="17%">
+        <td>
           <p><code>Ctrl+Z</code></p>
         </td>
 
         <td>
-          <p>Torna a l'estat en què us trobàveu abans de realitzar l'última acció d'edició. Aquesta acció no funciona un cop validat el segment modificat.</p>
+          <p>Desfà les últimes accions d'edició realitzades al segment d'arribada actiu.</p>
         </td>
       </tr>
 
       <tr bgcolor="#FFFFFF">
-        <td width="23%">
-          <p><code>Refés l'última acció</code></p>
+        <td>
+          <p>Refés l'última acció</p>
         </td>
 
-        <td width="17%">
+        <td>
           <p><code>Ctrl+Y</code></p>
         </td>
 
         <td>
-          <p>Torna a l'estat en què us trobàveu abans de cancel·lar l'última acció d'edició. Aquesta acció no funciona un cop validat el segment modificat.</p>
+          <p>Refà les accions d'edició que acabeu de desfer realitzades al segment d'arribada actiu.</p>
         </td>
       </tr>
 
       <tr bgcolor="#DDDDDD">
-        <td width="23%">
-          <p><code>Reemplaça per la coincidència</code></p>
-        </td>
-
-        <td width="17%">
-          <p><code>Ctrl+R</code></p>
+        <td>
+          <p>Selecciona la coincidència núm. N</p>
         </td>
 
         <td>
-          <p>Sobreescriu tot el segment d'arribada amb la coincidència parcial seleccionada (per defecte, se selecciona la primera coincidència).</p>
+          <p><code>Ctrl+#N</code></p>
+        </td>
+
+        <td>
+          <p>#N és un dígit d'1 a 5. La drecera selecciona la coincidència número N<sup></sup> que es mostra a la finestra de coincidències (per defecte, se selecciona la primera coincidència).</p>
         </td>
       </tr>
 
       <tr bgcolor="#FFFFFF">
-        <td width="23%">
-          <p><code>Insereix la coincidència</code></p>
+        <td>
+          <p>Reemplaça per la coincidència</p>
         </td>
 
-        <td width="17%">
+        <td>
+          <p><code>Ctrl+R</code></p>
+        </td>
+
+        <td>
+          <p>Reemplaça el contingut del segment d'arribada actiu per la coincidència seleccionada (per defecte, es reemplaça per la primera coincidència).</p>
+        </td>
+      </tr>
+
+      <tr bgcolor="#DDDDDD">
+        <td>
+          <p>Insereix la coincidència</p>
+        </td>
+
+        <td>
           <p><code>Ctrl+I</code></p>
         </td>
 
         <td>
-          <p>Insereix la coincidència parcial seleccionada a la posició del cursor. Aquesta funció sobreescriurà un fragment del segment d'arribada, si està seleccionat.</p>
+          <p>Insereix la coincidència seleccionada a la posició del cursor del segment d'arribada actiu (per defecte, s'insereix la primera coincidència).</p>
+        </td>
+      </tr>
+
+      <tr bgcolor="#FFFFFF">
+        <td>
+          <p>Reemplaça pel text de partida</p>
+        </td>
+
+        <td>
+          <p><code>Ctrl+Maj+R</code></p>
+        </td>
+
+        <td>
+          <p>Reemplaça el contingut del segment d'arribada actiu pel contingut del text de partida.</p>
+        </td>
+      </tr>
+
+      <tr bgcolor="#DDDDDD">
+        <td>
+          <p>Insereix el text de partida</p>
+        </td>
+
+        <td>
+          <p><code>Ctrl+Maj+I</code></p>
+        </td>
+
+        <td>
+          <p>Insereix el contingut del text de partida a la posició del cursor del segment d'arribada actiu.</p>
+        </td>
+      </tr>
+
+      <tr bgcolor="#FFFFFF">
+        <td>
+          <p>Cerca al projecte</p>
+        </td>
+
+        <td>
+          <p><code>Ctrl+F</code></p>
+        </td>
+
+        <td>
+          <p>Mostra un diàleg per realitzar cerques dins del projecte.</p>
         </td>
       </tr>
 
       <tr bgcolor="#DDDDDD">
         <td width="23%">
-          <p><code>Reemplaça amb la traducció automàtica</code></p>
+          <p>Reemplaça amb la traducció automàtica</p>
         </td>
 
         <td width="17%">
@@ -356,95 +410,7 @@
         </td>
 
         <td>
-          <p>Reemplaça el segment d'arribada per la traducció del Google Traductor. No realitza cap acció si el Google Traductor no està activat (vegeu Menú &gt; Opcions més endavant).</p>
-        </td>
-      </tr>
-
-      <tr bgcolor="#FFFFFF">
-        <td width="23%">
-          <p><code>Reemplaça pel text de partida</code></p>
-        </td>
-
-        <td width="17%">
-          <p><code>Maj+Ctrl+R</code></p>
-        </td>
-
-        <td>
-          <p>Sobreescriu tot el segment d'arribada amb el text de partida.</p>
-        </td>
-      </tr>
-
-      <tr bgcolor="#DDDDDD">
-        <td width="23%">
-          <p><code>Insereix el text de partida<br></code></p>
-        </td>
-
-        <td width="17%">
-          <p><code>Maj+Ctrl+I</code></p>
-        </td>
-
-        <td>
-          <p>Insereix el text de partida a la posició del cursor.</p>
-        </td>
-      </tr>
-
-      <tr bgcolor="#FFFFFF">
-        <td width="23%">
-          <p><code>Exporta la selecció</code></p>
-        </td>
-
-        <td width="17%">
-          <p><code>Maj+Ctrl+C</code></p>
-        </td>
-
-        <td>
-          <p>Exporta la selecció actual a un fitxer de text per processar-lo. Si no hi ha cap selecció, s'escriu el text de partida actual al fitxer. En sortir de l'OmegaT, aquest fitxer no es buida, per tal de ser coherent amb el comportament habitual del porta-retalls. El contingut exportat es copia al fitxer <span style=
-          "font-style: italic;">selection.txt</span>, que es troba a la carpeta de fitxers de preferències de l'usuari (vegeu <a href=
-          "filesAndDirectories.html#user" target="_blank">fitxers i directoris</a>).&nbsp;</p>
-        </td>
-      </tr>
-
-      <tr bgcolor="#DDDDDD">
-        <td width="23%">
-          <p><code>Cerca al projecte...</code></p>
-        </td>
-
-        <td width="17%">
-          <p><code>Ctrl+F</code></p>
-        </td>
-
-        <td>
-          <p>Obre una finestra <a href="userInterface.html#Search_Window">Cerca de text</a> nova.</p>
-        </td>
-      </tr>
-
-      <tr bgcolor="#FFFFFF">
-        <td width="23%">
-          <p><code>Canvia les majúscules i minúscules a...</code></p>
-        </td>
-
-        <td width="17%">
-          <p><code>Maj+F3</code></p>
-
-          <p><code>(vegeu el text)</code></p>
-        </td>
-
-        <td>
-          <p>Canvia les majúscules/minúscules del text ressaltat al segment traduït a l'opció seleccionada (minúscules, MAJÚSCULES o Majúscula Inicial). Utilitzeu Maj+F3 per alternar entre les tres opcions. Si no ha cap text seleccionat, l'OmegaT selecciona la paraula que conté la lletra immediatament a la dreta del cursor.</p>
-        </td>
-      </tr>
-
-      <tr bgcolor="#DDDDDD">
-        <td width="23%">
-          <p><code>Selecciona la coincidència núm. N</code></p>
-        </td>
-
-        <td width="17%">
-          <p><code>Ctrl+#N</code></p>
-        </td>
-
-        <td>
-          <p>(#N és un dígit d'1 a 5) - Selecciona la coincidència parcial número N mostrada a la finestra de coincidències, per tal d'inserir-la al segment o de reemplaçar el segment per la coincidència. L'apartat <a href="userInterface.html#Fuzzy_Matches">Coincidències parcials</a> descriu la codificació de colors en detall.</p>
+          <p>Reemplaça el segment d'arribada per la traducció del Google Traductor. No realitza cap acció si el Google Traductor no està activat (vegeu Menú &gt; Opcions &gt; Google Traductor).</p>
         </td>
       </tr>
 
@@ -466,7 +432,7 @@
         </td>
 
         <td>
-          <p>Avança fins al següent segment que no té equivalent a la memòria de traducció</p>
+          <p>Avança fins al següent segment que no té equivalent a la memòria de traducció.</p>
         </td>
       </tr>
 
@@ -603,7 +569,7 @@
 
         <td>
           <p>Comprova que no faltin etiquetes ni s'hagin modificat etiquetes en fitxers formatats. Mostra una llista dels segments que contenen errors d'etiquetes. L'apartat <a href=
-          "userInterface.html#Tag_Validation">Finestra de validació de les etiquetes</a> en descriu el contingut i l'apartat <a href="formattedText.html">Com treballar amb text formatat</a> n'explica el motiu.</p>
+          "userInterface.html#tag_Validation">Finestra de validació de les etiquetes</a> en descriu el contingut i l'apartat <a href="formattedText.html">Com treballar amb text formatat</a> n'explica el motiu.</p>
         </td>
       </tr>
 
@@ -623,7 +589,7 @@
         <td width="17%"></td>
 
         <td>
-          <p>Estableix la tecla de validació de segments en <code>Tab</code>, enlloc de la tecla per defecte <code>Retorn</code>. Aquesta opció és útil en alguns sistemes d'entrada de caràcters xinesos, japonesos o coreans.</p>
+          <p>Estableix la tecla de validació de segments en <code>Tab</code>, en lloc de la tecla per defecte <code>Retorn</code>. Aquesta opció és útil en alguns sistemes d'entrada de caràcters xinesos, japonesos o coreans.</p>
         </td>
       </tr>
 
@@ -645,7 +611,7 @@
         <td></td>
 
         <td>
-          <p>Activa o desactiva el <a href="GoogleTranslate.html">Google Traductor</a>. Si està activat, prement <code>Ctrl+M</code> s'insereix el suggeriment del Google Traductor  a la part de traducció del segment actiu. Abans d'inserir el suggeriment, podeu revisar-lo a la subfinestra Google Traductor.</p>
+          <p>Activa o desactiva el <a href="GoogleTranslate.html">Google Traductor</a>. Si està activat, prement <code>Ctrl+M</code> la traducció del segment actiu es reemplaça pel suggeriment del Google Traductor. Abans d'inserir el suggeriment, podeu revisar-lo a la subfinestra Google Traductor.</p>
         </td>
       </tr>
 
@@ -808,7 +774,7 @@
         </td>
 
         <td>
-          <p>Mostra un diàleg per localitzar un projecte ja existent</p>
+          <p>Mostra un diàleg per localitzar un projecte ja existent.</p>
         </td>
       </tr>
 
@@ -822,7 +788,7 @@
         </td>
 
         <td>
-          <p>Desa la feina actual al fitxer project_save.tmx, que es troba a la carpeta /omegat/ del projecte</p>
+          <p>Desa la feina actual al fitxer project_save.tmx, que es troba a la carpeta /omegat/ del projecte.</p>
         </td>
       </tr>
 
@@ -836,7 +802,7 @@
         </td>
 
         <td>
-          <p>Tanca el projecte actual</p>
+          <p>Tanca el projecte actual.</p>
         </td>
       </tr>
 
@@ -850,7 +816,7 @@
         </td>
 
         <td>
-          <p>Crea els documents traduïts a la carpeta «target» del projecte</p>
+          <p>Crea els documents traduïts a la carpeta «target» del projecte.</p>
         </td>
       </tr>
 
@@ -864,7 +830,7 @@
         </td>
 
         <td>
-          <p>Mostra la configuració del projecte i permet modificar-la</p>
+          <p>Mostra la configuració del projecte i permet modificar-la.</p>
         </td>
       </tr>
 
@@ -886,7 +852,7 @@
         </td>
 
         <td>
-          <p>Desfà les últimes accions d'edició realitzades al segment d'arribada actiu</p>
+          <p>Desfà les últimes accions d'edició realitzades al segment d'arribada actiu.</p>
         </td>
       </tr>
 
@@ -900,7 +866,7 @@
         </td>
 
         <td>
-          <p>Refà les accions d'edició que acabeu de desfer realitzades al segment d'arribada actiu</p>
+          <p>Refà les accions d'edició que acabeu de desfer realitzades al segment d'arribada actiu.</p>
         </td>
       </tr>
 
@@ -914,7 +880,7 @@
         </td>
 
         <td>
-          <p>#N és un dígit d'1 a 5. La drecera selecciona la coincidència número N<sup></sup> que es mostra a la finestra de coincidències (per defecte, se selecciona la primera coincidència)</p>
+          <p>#N és un dígit d'1 a 5. La drecera selecciona la coincidència número N<sup></sup> que es mostra a la finestra de coincidències (per defecte, se selecciona la primera coincidència).</p>
         </td>
       </tr>
 
@@ -928,7 +894,7 @@
         </td>
 
         <td>
-          <p>Reemplaça el contingut del segment d'arribada actiu per la coincidència seleccionada (per defecte, es reemplaça per la primera coincidència)</p>
+          <p>Reemplaça el contingut del segment d'arribada actiu per la coincidència seleccionada (per defecte, es reemplaça per la primera coincidència).</p>
         </td>
       </tr>
 
@@ -942,7 +908,7 @@
         </td>
 
         <td>
-          <p>Insereix la coincidència seleccionada a la posició del cursor del segment d'arribada actiu (per defecte, s'insereix la primera coincidència)</p>
+          <p>Insereix la coincidència seleccionada a la posició del cursor del segment d'arribada actiu (per defecte, s'insereix la primera coincidència).</p>
         </td>
       </tr>
 
@@ -956,7 +922,7 @@
         </td>
 
         <td>
-          <p>Reemplaça el contingut del segment d'arribada actiu pel contingut del text de partida</p>
+          <p>Reemplaça el contingut del segment d'arribada actiu pel contingut del text de partida.</p>
         </td>
       </tr>
 
@@ -970,7 +936,7 @@
         </td>
 
         <td>
-          <p>Insereix el contingut del text de partida a la posició del cursor del segment d'arribada actiu</p>
+          <p>Insereix el contingut del text de partida a la posició del cursor del segment d'arribada actiu.</p>
         </td>
       </tr>
 
@@ -984,7 +950,7 @@
         </td>
 
         <td>
-          <p>Mostra un diàleg per realitzar cerques dins del projecte</p>
+          <p>Mostra un diàleg per realitzar cerques dins del projecte.</p>
         </td>
       </tr>
 
@@ -1020,7 +986,7 @@
         </td>
 
         <td>
-          <p>Mou el camp d'edició actiu fins al següent segment que no estigui enregistrat a la memòria de traducció del projecte</p>
+          <p>Mou el camp d'edició actiu fins al següent segment que no estigui enregistrat a la memòria de traducció del projecte.</p>
         </td>
       </tr>
 
@@ -1034,7 +1000,7 @@
         </td>
 
         <td>
-          <p>Mou el camp d'edició fins al segment següent</p>
+          <p>Mou el camp d'edició fins al segment següent.</p>
         </td>
       </tr>
 
@@ -1048,7 +1014,7 @@
         </td>
 
         <td>
-          <p>Mou el camp d'edició fins al segment anterior</p>
+          <p>Mou el camp d'edició fins al segment anterior.</p>
         </td>
       </tr>
 
@@ -1062,7 +1028,7 @@
         </td>
 
         <td>
-          <p>Va al número de segment especificat</p>
+          <p>Va al número de segment especificat.</p>
         </td>
       </tr>
 
@@ -1076,7 +1042,7 @@
         </td>
 
         <td>
-          <p>Torna a un segment enrere en l'historial</p>
+          <p>Torna a un segment enrere en l'historial.</p>
         </td>
       </tr>
 
@@ -1090,7 +1056,7 @@
         </td>
 
         <td>
-          <p>Torna a un segment endavant en l'historial</p>
+          <p>Torna a un segment endavant en l'historial.</p>
         </td>
       </tr>
 
@@ -1112,7 +1078,7 @@
         </td>
 
         <td>
-          <p>Mostra el llistat de fitxers del projecte</p>
+          <p>Mostra el llistat de fitxers del projecte.</p>
         </td>
       </tr>
 
@@ -1134,7 +1100,7 @@
         </td>
 
         <td>
-          <p>Obre la finestra de <a href="userInterface.html#Tag_Validation">validació de les etiquetes</a></p>
+          <p>Obre la finestra de <a href="userInterface.html#tag_Validation">validació de les etiquetes</a>.</p>
         </td>
       </tr>
 
@@ -1162,7 +1128,7 @@
         </td>
 
         <td>
-          <p>Obre una finestra Cerca de text nova</p>
+          <p>Obre una finestra Cerca de text nova.</p>
         </td>
       </tr>
 
@@ -1176,7 +1142,7 @@
         </td>
 
         <td>
-          <p>Mostra els fitxers d'ajuda de l'OmegaT en una finestra separada</p>
+          <p>Mostra els fitxers d'ajuda de l'OmegaT en una finestra separada.</p>
         </td>
       </tr>
     </tbody>

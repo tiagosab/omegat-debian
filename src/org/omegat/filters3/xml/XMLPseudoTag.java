@@ -4,6 +4,7 @@
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2000-2006 Keith Godfrey and Maxym Mykhalchuk
+               2010 Didier Briel
                Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
@@ -20,7 +21,7 @@
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-**************************************************************************/
+ **************************************************************************/
 
 package org.omegat.filters3.xml;
 
@@ -28,16 +29,15 @@ import org.omegat.filters3.Attributes;
 import org.omegat.filters3.Tag;
 
 /**
- * Parts of XML file which look like a tag, but ain't.
- * For example, comments, doctype and entity declarations, etc.
- *
+ * Parts of XML file which look like a tag, but ain't. For example, comments,
+ * doctype and entity declarations, etc.
+ * 
  * @author Maxym Mykhalchuk
+ * @author Didier Briel
  */
-public abstract class XMLPseudoTag extends Tag
-{
+public abstract class XMLPseudoTag extends Tag {
     /** Creates a new instance of XMLPseudoTag */
-    public XMLPseudoTag()
-    {
-        super("!", null, TYPE_ALONE, new Attributes());                         // NOI18N
+    public XMLPseudoTag() {
+        super("!", "cp", TYPE_ALONE, new Attributes());
     }
 }

@@ -30,11 +30,17 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
-import org.custommonkey.xmlunit.XMLTestCase;
+import org.omegat.core.TestCore;
 import org.omegat.filters2.AbstractFilter;
+import org.omegat.filters2.FilterContext;
+import org.omegat.filters2.IAlignCallback;
+import org.omegat.filters2.IFilter;
 import org.omegat.filters2.IParseCallback;
+import org.omegat.filters2.ITranslateCallback;
 import org.omegat.util.LFileCopy;
+import org.omegat.util.Language;
 import org.xml.sax.InputSource;
 
 /**
@@ -42,91 +48,89 @@ import org.xml.sax.InputSource;
  * 
  * @author Alex Buloichik <alex73mail@gmail.com>
  */
-public abstract class TestFilterBase extends XMLTestCase {
-    protected File outFile = new File(System.getProperty("java.io.tmpdir"),
-            "OmegaT filter test - " + getClass().getSimpleName());
+public abstract class TestFilterBase extends TestCore {
+    protected FilterContext context = new FilterContext(new Language("en"), new Language("be"), false);
 
-    protected List<String> parse(AbstractFilter filter, String filename)
+    protected File outFile = new File(System.getProperty("java.io.tmpdir"), "OmegaT filter test - "
+            + getClass().getSimpleName());
+
+    protected List<String> parse(AbstractFilter filter, String filename) throws Exception {
+        final List<String> result = new ArrayList<String>();
+
+        filter.parseFile(new File(filename), new TreeMap<String, String>(), context, new IParseCallback() {
+            public void addEntry(String id, String source, String translation, boolean isFuzzy,
+                    String comment, IFilter filter) {
+                if (source.length() > 0)
+                    result.add(source);
+            }
+
+            public void addFileTMXEntry(String source, String translation) {
+            }
+        });
+
+        return result;
+    }
+
+    protected List<String> parse(AbstractFilter filter, String filename, Map<String, String> options)
             throws Exception {
         final List<String> result = new ArrayList<String>();
 
-        filter.setParseCallback(new IParseCallback() {
-            public String processEntry(String entry) {
-                if (entry.length() > 0)
-                    result.add(entry);
-                return entry;
+        filter.parseFile(new File(filename), options, context, new IParseCallback() {
+            public void addEntry(String id, String source, String translation, boolean isFuzzy,
+                    String comment, IFilter filter) {
+                if (source.length() > 0)
+                    result.add(source);
             }
 
-            public void addEntry(String id, String source, String translation,
-                    String comment) {
-            }
-
-            public String getTranslation(String id, String source) {
-                return null;
-            }
-
-            public void addLegacyTMXEntry(String source, String translation) {
+            public void addFileTMXEntry(String source, String translation) {
             }
         });
-        filter.processFile(new File(filename), null, null, null);
 
         return result;
     }
 
     protected void parse2(final AbstractFilter filter, final String filename,
-            final Map<String, String> result,
-            final Map<String, String> legacyTMX) throws Exception {
+            final Map<String, String> result, final Map<String, String> legacyTMX) throws Exception {
 
-        filter.setParseCallback(new IParseCallback() {
-            public String processEntry(String entry) {
-                return null;
+        filter.parseFile(new File(filename), new TreeMap<String, String>(), context, new IParseCallback() {
+            public void addEntry(String id, String source, String translation, boolean isFuzzy,
+                    String comment, IFilter filter) {
+                String segTranslation = isFuzzy ? null : translation;
+                result.put(source, segTranslation);
+                if (translation != null) {
+                    // Add systematically the TU as a legacy TMX
+                    String tmxSource = isFuzzy ? "[" + filter.getFuzzyMark() + "] " + source : source;
+                    addFileTMXEntry(tmxSource, translation);
+                }
             }
 
-            public void addEntry(String id, String source, String translation,
-                    String comment) {
-                result.put(source, translation);
-            }
-
-            public String getTranslation(String id, String source) {
-                return null;
-            }
-
-            public void addLegacyTMXEntry(String source, String translation) {
+            public void addFileTMXEntry(String source, String translation) {
                 legacyTMX.put(source, translation);
             }
         });
-        filter.processFile(new File(filename), null, null, null);
     }
 
-    protected void translate(AbstractFilter filter, String filename)
-            throws Exception {
-        filter.setParseCallback(new IParseCallback() {
-            public String processEntry(String entry) {
-                return entry;
-            }
-
-            public void addEntry(String id, String source, String translation,
-                    String comment) {
-            }
-
-            public String getTranslation(String id, String source) {
-                return null;
-            }
-
-            public void addLegacyTMXEntry(String source, String translation) {
-            }
-        });
-        filter.processFile(new File(filename), null, outFile, null);
+    protected void translate(AbstractFilter filter, String filename) throws Exception {
+        filter.translateFile(new File(filename), outFile, new TreeMap<String, String>(), context,
+                new ITranslateCallback() {
+                    public String getTranslation(String id, String source) {
+                        return source;
+                    }
+                });
     }
 
-    protected void translateText(AbstractFilter filter, String filename)
-            throws Exception {
+    protected void align(IFilter filter, String in, String out, IAlignCallback callback) throws Exception {
+        File inFile = new File("test/data/filters/" + in);
+        File outFile = new File("test/data/filters/" + out);
+        filter.alignFile(inFile, outFile, new TreeMap<String, String>(), context, callback);
+    }
+
+    protected void translateText(AbstractFilter filter, String filename) throws Exception {
         translate(filter, filename);
         compareBinary(new File(filename), outFile);
     }
 
-    protected void translateXML(AbstractFilter filter, String filename)
-            throws Exception {
+    protected void translateXML(AbstractFilter filter, String filename) throws Exception {
         translate(filter, filename);
         compareXML(new File(filename), outFile);
     }
@@ -151,7 +155,6 @@ public abstract class TestFilterBase extends XMLTestCase {
     }
 
     protected void compareXML(URL f1, URL f2) throws Exception {
-        assertXMLEqual(new InputSource(f1.toExternalForm()), new InputSource(f2
-                .toExternalForm()));
+        assertXMLEqual(new InputSource(f1.toExternalForm()), new InputSource(f2.toExternalForm()));
     }
 }

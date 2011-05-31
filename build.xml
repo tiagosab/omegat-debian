@@ -4,7 +4,8 @@
 /**************************************************************************
  OmegaT - Java based Computer Assisted Translation (CAT) tool
  Copyright (C) 2000-2007 Keith Godfrey and Maxym Mykhalchuk
-               Home page: http://www.omegat.org/omegat/omegat.html
+               2008-2010 Didier Briel, Alex Buloichik
+               Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
  This program is free software; you can redistribute it and/or modify
@@ -89,6 +90,7 @@
                     docs/en/images/NewProject.png
                     docs/en/images/tagged_segment.png
                     docs/en/images/tagged_segment_target.png
+                    docs/en/images/MatchesPane.png
                     src/**/Bundle.properties"/>
         </copy>
         <copy file="release/readme.txt"
@@ -159,6 +161,10 @@
                 <filter token="TRANSLATION_NOTICE" value=""/>
             </filterset>
         </copy>
+        <mkdir dir="dist/plugins"/>
+        <copy todir="dist/plugins">
+            <fileset dir="release/plugins-specific"/>
+        </copy>
         <mkdir dir="dist/docs"/>
         <copy todir="dist/docs"> <!-- copy all files except English legalNotices.html -->
             <fileset dir="docs" excludes="en/legalNotices.html"/>
@@ -183,7 +189,7 @@
     <!-- Builds a ZIP distribution -->    
     <target name="zip" description="Build Zip distro" depends="jar,release">
         <mkdir dir="dist2"/>
-        <zip destfile="dist2/OmegaT_${distversion}.zip">
+        <zip destfile="dist2/OmegaT_${distversion}_Without_JRE.zip">
             <zipfileset dir="dist" excludes="OmegaT OmegaT-JRE OmegaT.exe OmegaT.iss OmegaT-JRE.iss OmegaT.l4J.ini l10n-project"/>
             <zipfileset dir="dist" includes="OmegaT" filemode="755"/>
         </zip>
@@ -208,7 +214,7 @@
    </target>
 
     <!-- Creates a Windows Installer -->
-    <target name="do-win" depends="init,jar,zip">
+    <target name="do-win" depends="init,jar,zip" description="Creates a Windows Installer. PRE: Inno Setup (http://www.jrsoftware.org/isinfo.php) with all optional language packs must be installed and available on the path.">
         <copy todir="dist" file="release/win32-specific/OmegaT.exe"/>
         <copy todir="dist" file="release/win32-specific/OmegaT.l4J.ini"/>
  
@@ -223,7 +229,7 @@
     </target>
 
     <!-- Creates a Windows Installer with JRE-->
-    <target name="do-win-jre" depends="check-jre" if="jre.exists">
+    <target name="do-win-jre" depends="check-jre" if="jre.exists" description="Creates a Windows Installer with JRE. PRE: Inno Setup (http://www.jrsoftware.org/isinfo.php) with all optional language packs must be installed and available on the path, and a JRE must be present in ..\\jre\\ ">
         <copy todir="dist" file="release/win32-specific/OmegaT.exe"/>
         <copy todir="dist" file="release/win32-specific/OmegaT.l4J.ini"/>
         
@@ -233,6 +239,36 @@
         <exec executable="${iscc.exe}">
             <arg file="dist/OmegaT-JRE.iss"/>
         </exec>
+    </target>
+
+    <!-- Builds a Mac distribution -->    
+    <target name="mac" description="Build Mac distro. PRE: A Mac Java Application Stub must be present in ../" depends="jar,release,check-mac-java-stub" if="mac-java-stub.exists">
+        <!-- Build directories -->
+        <mkdir dir="dist2"/>
+        <mkdir dir="dist2/mac/"/>
+        <mkdir dir="dist2/mac/OmegaT.app"/>
+        <mkdir dir="dist2/mac/OmegaT.app/Contents"/>
+        <mkdir dir="dist2/mac/OmegaT.app/Contents/MacOS"/>
+        <mkdir dir="dist2/mac/OmegaT.app/Contents/Resources"/>
+        <mkdir dir="dist2/mac/OmegaT.app/Contents/Resources/Java"/>
+        
+        <copy todir="dist2/mac/" file="release/mac-specific/index.html"/>
+        <copy todir="dist2/mac/OmegaT.app/Contents" file="release/mac-specific/OmegaT.css"/>       
+        <filter token="VERSION_NUMBER_SUBST" value="${distversion}"/>
+        <copy todir="dist2/mac/OmegaT.app/Contents" file="release/mac-specific/Info.plist" filtering="on"/>
+        <copy todir="dist2/mac/OmegaT.app/Contents" file="release/mac-specific/PkgInfo"/>
+        <copy todir="dist2/mac/OmegaT.app/Contents/MacOS" file="../JavaApplicationStub"/>
+        <copy todir="dist2/mac/OmegaT.app/Contents/Resources" file="release/mac-specific/OmegaT.icns"/>
+        
+        <copy todir="dist2/mac/OmegaT.app/Contents/Resources/Java">
+            <fileset dir="dist" excludes="OmegaT OmegaT-JRE OmegaT.exe OmegaT.bat OmegaT.iss OmegaT-JRE.iss OmegaT.l4J.ini l10n-project"/> 
+        </copy>
+
+        <zip destfile="dist2/OmegaT_${distversion}_Mac.zip">
+            <zipfileset dir="dist2/mac/" excludes="OmegaT.app/Contents/MacOS/JavaApplicationStub"/>
+            <zipfileset dir="dist2/mac/" includes="OmegaT.app/Contents/MacOS/JavaApplicationStub" filemode="755"/>
+        </zip>
+        
     </target>
 
     <target name="check-win" depends="init">
@@ -252,7 +288,11 @@
         <available file="../jre-linux" type="dir" property="jre-linux.exists" />
     </target>
 
-    <target name="win" description="Build Win32 distro if on Windows" 
+    <target name="check-mac-java-stub">
+        <available file="../JavaApplicationStub" type="file" property="mac-java-stub.exists" />
+    </target>   
+
+    <target name="win" description="Build Win32 distro if on Windows. PRE: Inno Setup (http://www.jrsoftware.org/isinfo.php) with all optional language packs must be installed and available on the path, and for the JRE-version a JRE must be present in ..\\jre\\ "
                                         depends="check-win" if="os.windows">
         <ant target="do-win" />
         <ant target="do-win-jre" />
@@ -275,7 +315,7 @@
     </target>
         
     <!-- Builds all OmegaT products -->
-    <target name="all" depends="l10n-pack,src,jar,zip,win, linux" />
+    <target name="all" depends="l10n-pack,src,jar,zip,win,linux,mac" />
 
 	<target name="gen">
 		<taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
@@ -296,6 +336,9 @@
 				<pathelement path="build/classes" />
 			</classpath>
 		</javac>
+		<copy todir="build/genclasses">
+			<fileset dir="gen/src" excludes="**/*.java"/>
+		</copy>
 
 		<java classname="util.CreateDocIndexUtil">
 			<classpath>

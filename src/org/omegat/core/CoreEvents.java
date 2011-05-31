@@ -30,7 +30,7 @@ import java.util.List;
 
 import javax.swing.SwingUtilities;
 
-import org.omegat.core.data.StringEntry;
+import org.omegat.core.data.SourceTextEntry;
 import org.omegat.core.events.IApplicationEventListener;
 import org.omegat.core.events.IEditorEventListener;
 import org.omegat.core.events.IEntryEventListener;
@@ -54,89 +54,77 @@ public class CoreEvents {
     private static final List<IEditorEventListener> editorEventListeners = new ArrayList<IEditorEventListener>();
 
     /** Register listener. */
-    public static void registerProjectChangeListener(
-            final IProjectEventListener listener) {
+    public static void registerProjectChangeListener(final IProjectEventListener listener) {
         synchronized (projectEventListeners) {
             projectEventListeners.add(listener);
         }
     }
 
     /** Unregister listener. */
-    public static void unregisterProjectChangeListener(
-            final IProjectEventListener listener) {
+    public static void unregisterProjectChangeListener(final IProjectEventListener listener) {
         synchronized (projectEventListeners) {
             projectEventListeners.remove(listener);
         }
     }
 
     /** Register listener. */
-    public static void registerApplicationEventListener(
-            final IApplicationEventListener listener) {
+    public static void registerApplicationEventListener(final IApplicationEventListener listener) {
         synchronized (applicationEventListeners) {
             applicationEventListeners.add(listener);
         }
     }
 
     /** Unregister listener. */
-    public static void unregisterApplicationEventListener(
-            final IApplicationEventListener listener) {
+    public static void unregisterApplicationEventListener(final IApplicationEventListener listener) {
         synchronized (applicationEventListeners) {
             applicationEventListeners.remove(listener);
         }
     }
 
     /** Register listener. */
-    public static void registerEntryEventListener(
-            final IEntryEventListener listener) {
+    public static void registerEntryEventListener(final IEntryEventListener listener) {
         synchronized (entryEventListeners) {
             entryEventListeners.add(listener);
         }
     }
 
     /** Unregister listener. */
-    public static void unregisterEntryEventListener(
-            final IEntryEventListener listener) {
+    public static void unregisterEntryEventListener(final IEntryEventListener listener) {
         synchronized (entryEventListeners) {
             entryEventListeners.remove(listener);
         }
     }
 
     /** Register listener. */
-    public static void registerFontChangedEventListener(
-            final IFontChangedEventListener listener) {
+    public static void registerFontChangedEventListener(final IFontChangedEventListener listener) {
         synchronized (fontChangedEventListeners) {
             fontChangedEventListeners.add(listener);
         }
     }
 
     /** Unregister listener. */
-    public static void unregisterFontChangedEventListener(
-            final IFontChangedEventListener listener) {
+    public static void unregisterFontChangedEventListener(final IFontChangedEventListener listener) {
         synchronized (fontChangedEventListeners) {
             fontChangedEventListeners.remove(listener);
         }
     }
-    
+
     /** Register listener. */
-    public static void registerEditorEventListener(
-            final IEditorEventListener listener) {
+    public static void registerEditorEventListener(final IEditorEventListener listener) {
         synchronized (editorEventListeners) {
             editorEventListeners.add(listener);
         }
     }
 
     /** Unregister listener. */
-    public static void unregisterEditorEventListener(
-            final IEditorEventListener listener) {
+    public static void unregisterEditorEventListener(final IEditorEventListener listener) {
         synchronized (editorEventListeners) {
             editorEventListeners.remove(listener);
         }
     }
 
-
     /** Fire event. */
-    public static void fireProjectChange(
-            final IProjectEventListener.PROJECT_CHANGE_TYPE eventType) {
+    public static void fireProjectChange(final IProjectEventListener.PROJECT_CHANGE_TYPE eventType) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 Log.logInfoRB("LOG_INFO_EVENT_PROJECT_CHANGE", eventType);
@@ -165,16 +153,13 @@ public class CoreEvents {
 
     /** Fire event. */
     public static void fireApplicationShutdown() {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                Log.logInfoRB("LOG_INFO_EVENT_APPLICATION_SHUTDOWN");
-                synchronized (applicationEventListeners) {
-                    for (IApplicationEventListener listener : applicationEventListeners) {
-                        listener.onApplicationShutdown();
-                    }
-                }
+        // We shouldn't invoke it later, because need to shutdown immediately.
+        Log.logInfoRB("LOG_INFO_EVENT_APPLICATION_SHUTDOWN");
+        synchronized (applicationEventListeners) {
+            for (IApplicationEventListener listener : applicationEventListeners) {
+                listener.onApplicationShutdown();
             }
-        });
+        }
     }
 
     /** Fire event. */
@@ -192,7 +177,7 @@ public class CoreEvents {
     }
 
     /** Fire event. */
-    public static void fireEntryActivated(final StringEntry newEntry) {
+    public static void fireEntryActivated(final SourceTextEntry newEntry) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 Log.logInfoRB("LOG_INFO_EVENT_ENTRY_ACTIVATED");
@@ -204,7 +189,7 @@ public class CoreEvents {
             }
         });
     }
-    
+
     /** Fire event. */
     public static void fireFontChanged(final Font newFont) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -218,10 +203,9 @@ public class CoreEvents {
             }
         });
     }
-    
 
     /** Fire event. */
-    public static void fireEditorNewWOrd(final String newWord) {
+    public static void fireEditorNewWord(final String newWord) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 synchronized (editorEventListeners) {
@@ -231,5 +215,5 @@ public class CoreEvents {
                 }
             }
         });
-    }    
+    }
 }

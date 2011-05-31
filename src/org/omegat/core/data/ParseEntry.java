@@ -8,6 +8,7 @@
            (C) 2006 Martin Wunderlich
            (C) 2006-2007 Didier Briel
            (C) 2008 Martin Fleurke
+           (C) 2009 Alex Buloichik
                Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
@@ -24,7 +25,7 @@
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-**************************************************************************/
+ **************************************************************************/
 
 package org.omegat.core.data;
 
@@ -33,101 +34,27 @@ import java.util.List;
 
 import org.omegat.core.segmentation.Rule;
 import org.omegat.core.segmentation.Segmenter;
+import org.omegat.filters2.IFilter;
 import org.omegat.filters2.IParseCallback;
 import org.omegat.util.Language;
 import org.omegat.util.StaticUtils;
+import org.omegat.util.StringUtil;
 
 /**
  * Process one entry on parse source file.
  * 
  * @author Maxym Mykhalchuk
  * @author Henry Pijffers
+ * @author Alex Buloichik <alex73mail@gmail.com>
  */
 public abstract class ParseEntry implements IParseCallback {
+
     private final ProjectProperties m_config;
 
     public ParseEntry(final ProjectProperties m_config) {
         this.m_config = m_config;
     }
-    /**
-     * This method is called by filters to:
-     * <ul>
-     * <li>Instruct OmegaT what source strings are translatable.
-     * <li>Get the translation of each source string.
-     * </ul>
-     * 
-     * @param entry
-     *                Translatable source string
-     * @return Translation of the source string. If there's no translation,
-     *         returns the source string itself.
-     */
-    public String processEntry(String entry) {
-        // replacing all occurrences of single CR (\r) or CRLF (\r\n) by LF (\n)
-        // this is reversed at the end of the method
-        // fix for bug 1462566
-        boolean crlf = entry.indexOf("\r\n") > 0;
-        if (crlf)
-            entry = entry.replaceAll("\\r\\n", "\n");
-        boolean cr = entry.indexOf("\r") > 0;
-        if (cr)
-            entry = entry.replaceAll("\\r", "\n");
 
-        // Some special space handling: skip leading and trailing whitespace
-        // and non-breaking-space
-        int len = entry.length();
-        int b = 0;
-        StringBuffer bs = new StringBuffer();
-        while (b < len
-                && (Character.isWhitespace(entry.charAt(b)) || entry.charAt(b) == '\u00A0')) {
-            bs.append(entry.charAt(b));
-            b++;
-        }
-
-        int e = len - 1;
-        StringBuffer es = new StringBuffer();
-        while (e >= b
-                && (Character.isWhitespace(entry.charAt(e)) || entry.charAt(e) == '\u00A0')) {
-            es.append(entry.charAt(e));
-            e--;
-        }
-        es.reverse();
-
-        entry = StaticUtils.fixChars(entry.substring(b, e + 1));
-
-        StringBuffer res = new StringBuffer();
-        res.append(bs);
-
-        if (m_config.isSentenceSegmentingEnabled()) {
-            List<StringBuffer> spaces = new ArrayList<StringBuffer>();
-            List<Rule> brules = new ArrayList<Rule>();
-            Language sourceLang = m_config.getSourceLanguage();
-            Language targetLang = m_config.getTargetLanguage();
-            List<String> segments = Segmenter.segment(sourceLang, entry,
-                    spaces, brules);
-            for (int i = 0; i < segments.size(); i++) {
-                String onesrc = segments.get(i);
-                segments.set(i, processSingleEntry(onesrc));
-            }
-            res.append(Segmenter.glue(sourceLang, targetLang, segments, spaces,
-                    brules));
-        } else
-            res.append(processSingleEntry(entry));
-
-        res.append(es);
-
-        // replacing all occurrences of LF (\n) by either single CR (\r) or CRLF
-        // (\r\n)
-        // this is a reversal of the process at the beginning of this method
-        // fix for bug 1462566
-        String result = res.toString();
-        if (crlf)
-            result = result.replaceAll("\\n", "\r\n");
-        else if (cr)
-            result = result.replaceAll("\\n", "\r");
-
-        return result;
-    }
-    
     /**
      * This method is called by filters to add new entry in OmegaT after read it
      * from source file.
@@ -137,144 +64,148 @@ public abstract class ParseEntry implements IParseCallback {
      * @param source
      *            Translatable source string
      * @param translation
-     *            exist source's string translation
+     *            translation of the source string, if format supports it
      * @param isFuzzy
-     *            flag for fuzzy translation
+     *            flag for fuzzy translation. If a translation is fuzzy, it is
+     *            not added to the projects TMX, but it is added to the
+     *            generated 'reference' TMX, a special TMX that is used as extra
+     *            reference during translation.
+     * @param comment
+     *            entry's comment, if format supports it
+     * @param filter
+     *            filter which produces entry
+     */
+    public void addEntry(String id, String source, String translation, boolean isFuzzy, String comment,
+            IFilter filter) {
+        if (StringUtil.isEmpty(source)) {
+            // empty string - not need to save
+            return;
+        }
+
+        ParseEntryResult tmp = new ParseEntryResult();
+
+        source = stripSomeChars(source, tmp);
+        if (translation != null) {
+            translation = stripSomeChars(translation, tmp);
+        }
+
+        String segTranslation = isFuzzy ? null : translation;
+
+        if (m_config.isSentenceSegmentingEnabled()) {
+            List<StringBuffer> spaces = new ArrayList<StringBuffer>();
+            List<Rule> brules = new ArrayList<Rule>();
+            Language sourceLang = m_config.getSourceLanguage();
+            List<String> segments = Segmenter.segment(sourceLang, source, spaces, brules);
+            if (segments.size() == 1) {
+                addSegment(id, (short) 0, segments.get(0), segTranslation, comment);
+            } else {
+                for (short i = 0; i < segments.size(); i++) {
+                    String onesrc = segments.get(i);
+                    addSegment(id, i, onesrc, null, comment);
+                }
+            }
+        } else {
+            addSegment(id, (short) 0, source, segTranslation, comment);
+        }
+        if (translation != null) {
+            // Add systematically the TU as a legacy TMX
+            String tmxSource;
+            if (isFuzzy) {
+                tmxSource = "[" + filter.getFuzzyMark() + "] " + source;
+            } else {
+                tmxSource = source;
+            }
+            addFileTMXEntry(tmxSource, translation);
+        }
+    }
+
+    /**
+     * Adds the source and translation to the generated 'reference TMX', a
+     * special TMX that is used as extra refrence during translation.
+     */
+    public abstract void addFileTMXEntry(String source, String translation);
+
+    /**
+     * Adds a segment to the project. If a translation is given, it it added to
+     * the projects TMX.
+     * 
+     * @param id
+     *            ID of entry, if format supports it
+     * @param segmentIndex
+     *            Number of the segment-part of the original source string.
+     * @param segmentSource
+     *            Translatable source string
+     * @param segmentTranslation
+     *            non fuzzy translation of the source string, if format supports
+     *            it
      * @param comment
      *            entry's comment, if format supports it
      */
-    public void addEntry(String id, String source, String translation, String comment) {
-        // replacing all occurrences of single CR (\r) or CRLF (\r\n) by LF (\n)
-        // this is reversed at the end of the method
-        // fix for bug 1462566
-        boolean crlf = source.indexOf("\r\n") > 0;
-        if (crlf)
-            source = source.replace("\\r\\n", "\n");
-        boolean cr = source.indexOf("\r") > 0;
-        if (cr)
-            source = source.replace("\\r", "\n");
+    protected abstract void addSegment(String id, short segmentIndex, String segmentSource,
+            String segmentTranslation, String comment);
 
-        // Some special space handling: skip leading and trailing whitespace
-        // and non-breaking-space
-        int len = source.length();
-        int b = 0;
-        while (b < len
-                && (Character.isWhitespace(source.charAt(b)) || source.charAt(b) == '\u00A0')) {
-            b++;
-        }
-
-        int e = len - 1;
-        while (e >= b
-                && (Character.isWhitespace(source.charAt(e)) || source.charAt(e) == '\u00A0')) {
-            e--;
-        }
-
-        source = StaticUtils.fixChars(source.substring(b, e + 1));
-
-        if (m_config.isSentenceSegmentingEnabled()) {
-            List<StringBuffer> spaces = new ArrayList<StringBuffer>();
-            List<Rule> brules = new ArrayList<Rule>();
-            Language sourceLang = m_config.getSourceLanguage();
-            List<String> segments = Segmenter.segment(sourceLang, source,
-                    spaces, brules);
-            if (segments.size() == 1) {
-                addSegment(id, 0, segments.get(0), translation, comment);
-            } else {
-                for (int i = 0; i < segments.size(); i++) {
-                    String onesrc = segments.get(i);
-                    addSegment(id, i, onesrc, null, comment);
-                }             
-            }
-        } else
-            addSegment(id, 0, source, translation, comment);
-        // Add systematically the TU as a legacy TMX
-        addLegacyTMXEntry(source, translation);
-    }
-    
     /**
-     * Get translation for specified entry to write output file.
+     * Strip some chars for represent string in UI.
      * 
-     * @param entry
-     *            entry ID
-     * @param source
-     *            source text
+     * @param src
+     *            source string to strip chars
+     * @return result
      */
-    public String getTranslation(String id, String source) {
-        // replacing all occurrences of single CR (\r) or CRLF (\r\n) by LF (\n)
-        // this is reversed at the end of the method
-        // fix for bug 1462566
-        boolean crlf = source.indexOf("\r\n") > 0;
-        if (crlf)
-            source = source.replace("\\r\\n", "\n");
-        boolean cr = source.indexOf("\r") > 0;
-        if (cr)
-            source = source.replace("\\r", "\n");
+    static String stripSomeChars(final String src, final ParseEntryResult per) {
+        String r = src;
 
-        // Some special space handling: skip leading and trailing whitespace
-        // and non-breaking-space
-        int len = source.length();
+        /**
+         * AB: we need to find begin/end spaces first, then replace \r,\n chars.
+         * Since \r,\n are spaces, we will not need to store spaces in buffer,
+         * but we can just remember spaces count at the begin and at the end,
+         * then restore spaces from original string.
+         */
+
+        /*
+         * Some special space handling: skip leading and trailing whitespace and
+         * non-breaking-space
+         */
+        int len = r.length();
         int b = 0;
-        StringBuffer bs = new StringBuffer();
-        while (b < len
-                && (Character.isWhitespace(source.charAt(b)) || source.charAt(b) == '\u00A0')) {
-            bs.append(source.charAt(b));
+        while (b < len && (Character.isWhitespace(r.charAt(b)) || r.charAt(b) == '\u00A0')) {
             b++;
         }
+        per.spacesAtBegin = b;
 
-        int e = len - 1;
-        StringBuffer es = new StringBuffer();
-        while (e >= b
-                && (Character.isWhitespace(source.charAt(e)) || source.charAt(e) == '\u00A0')) {
-            es.append(source.charAt(e));
-            e--;
+        int pos = len - 1;
+        int e = 0;
+        while (pos >= b && (Character.isWhitespace(r.charAt(pos)) || r.charAt(pos) == '\u00A0')) {
+            pos--;
+            e++;
         }
-        es.reverse();
+        per.spacesAtEnd = e;
 
-        source = StaticUtils.fixChars(source.substring(b, e + 1));
+        r = r.substring(b, pos + 1);
 
-        StringBuffer res = new StringBuffer();
-        res.append(bs);
+        /*
+         * Replacing all occurrences of single CR (\r) or CRLF (\r\n) by LF
+         * (\n). This is reversed on create translation. (fix for bug 1462566)
+         * We don't need to remember crlf/cr presents on parse, but only on
+         * translate.
+         */
+        per.crlf = r.indexOf("\r\n") > 0;
+        if (per.crlf)
+            r = r.replace("\r\n", "\n");
+        per.cr = r.indexOf("\r") > 0;
+        if (per.cr)
+            r = r.replace("\r", "\n");
 
-        if (m_config.isSentenceSegmentingEnabled()) {
-            List<StringBuffer> spaces = new ArrayList<StringBuffer>();
-            List<Rule> brules = new ArrayList<Rule>();
-            Language sourceLang = m_config.getSourceLanguage();
-            Language targetLang = m_config.getTargetLanguage();
-            List<String> segments = Segmenter.segment(sourceLang, source,
-                    spaces, brules);
-            for (int i = 0; i < segments.size(); i++) {
-                String onesrc = segments.get(i);
-                segments.set(i, getSegmentTranslation(id, i, onesrc));
-            }
-            res.append(Segmenter.glue(sourceLang, targetLang, segments, spaces,
-                    brules));
-        } else
-            res.append(getSegmentTranslation(id, 0, source));
+        r = StaticUtils.fixChars(r);
 
-        res.append(es);
-
-        // replacing all occurrences of LF (\n) by either single CR (\r) or CRLF
-        // (\r\n)
-        // this is a reversal of the process at the beginning of this method
-        // fix for bug 1462566
-        String result = res.toString();
-        if (crlf)
-            result = result.replace("\\n", "\r\n");
-        else if (cr)
-            result = result.replace("\\n", "\r");
-
-        return result;
+        return r;
     }
 
-    protected abstract String processSingleEntry(String src);
-
-    protected void addSegment(String id, int segmentIndex,
-            String segmentSource, String segmentTranslation, String comment) {
-        processSingleEntry(segmentSource);
-    }
-
-    protected String getSegmentTranslation(String id, int segmentIndex,
-            String segmentSource) {
-        return processSingleEntry(segmentSource);
+    /**
+     * Storage for results of entry parsing, i.e. cr/crlf flags, spaces counts
+     * on the begin and end.
+     */
+    public static class ParseEntryResult {
+        public boolean crlf, cr;
+        int spacesAtBegin, spacesAtEnd;
     }
 }

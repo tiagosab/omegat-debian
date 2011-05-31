@@ -60,9 +60,9 @@ public interface IMainWindow {
      * Show message in status bar from resource bundle by key.
      * 
      * @param messageKey
-     *                message key in resource bundle
+     *            message key in resource bundle
      * @param params
-     *                message parameters for formatting
+     *            message parameters for formatting
      */
     void showStatusMessageRB(String messageKey, Object... params);
 
@@ -70,7 +70,7 @@ public interface IMainWindow {
      * Show message in progress bar.
      * 
      * @param messageText
-     *                message text
+     *            message text
      */
     void showProgressMessage(String messageText);
 
@@ -78,7 +78,7 @@ public interface IMainWindow {
      * Show message in length label.
      * 
      * @param messageText
-     *                message text
+     *            message text
      */
     void showLengthMessage(String messageText);
 
@@ -86,32 +86,39 @@ public interface IMainWindow {
      * Display error.
      * 
      * @param ex
-     *                exception to show
+     *            exception to show
      * @param errorKey
-     *                error message key in resource bundle
+     *            error message key in resource bundle
      * @param params
-     *                error text parameters
+     *            error text parameters
      */
     void displayErrorRB(Throwable ex, String errorKey, Object... params);
 
     /**
      * Show message in an ErrorDialog
      * 
-     * @param message 
-     *                message key in resource bundle of message that is to be 
-     *                displayed 
-     * @param title 
-     *                title of dialog. message key in resource bundle of title 
-     *                that is to be displayed
+     * @param message
+     *            message key in resource bundle of message that is to be
+     *            displayed
+     * @param args
+     *            arguments of the resource bundle message
+     * @param title
+     *            title of dialog. message key in resource bundle of title that
+     *            is to be displayed
      */
-    void showErrorDialogRB(String message, String title);
+    void showErrorDialogRB(String message, Object[] args, String title);
 
     /**
      * Add new dockable pane into application frame. This method called on
      * application startup.
      * 
      * @param pane
-     *                dockable pane
+     *            dockable pane
      */
     void addDockable(Dockable pane);
+
+    /**
+     * Retrieve main manu instance.
+     */
+    IMainMenu getMainMenu();
 }

@@ -1,9 +1,10 @@
 /**************************************************************************
- OmegaT - Computer Assisted Translation (CAT) tool 
-          with fuzzy matching, translation memory, keyword search, 
+ OmegaT - Computer Assisted Translation (CAT) tool
+          with fuzzy matching, translation memory, keyword search,
           glossaries, and translation leveraging into updated projects.
 
  Copyright (C) 2008 Alex Buloichik
+               2010 Wildrich Fourie
                Home page: http://www.omegat.org/
                Support center: http://groups.yahoo.com/group/OmegaT/
 
@@ -24,12 +25,12 @@
 
 package org.omegat.core;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.omegat.core.data.IProject;
 import org.omegat.core.data.NotLoadedProject;
-import org.omegat.core.matching.ITokenizer;
-import org.omegat.core.matching.Tokenizer;
 import org.omegat.core.segmentation.SRX;
 import org.omegat.core.spellchecker.ISpellChecker;
 import org.omegat.core.spellchecker.SpellChecker;
@@ -38,7 +39,8 @@ import org.omegat.core.threads.SaveThread;
 import org.omegat.gui.dictionaries.DictionariesTextArea;
 import org.omegat.gui.editor.EditorController;
 import org.omegat.gui.editor.IEditor;
-import org.omegat.gui.exttrans.GoogleTranslateTextArea;
+import org.omegat.gui.editor.mark.IMarker;
+import org.omegat.gui.exttrans.MachineTranslateTextArea;
 import org.omegat.gui.glossary.GlossaryTextArea;
 import org.omegat.gui.main.ConsoleWindow;
 import org.omegat.gui.main.IMainWindow;
@@ -47,7 +49,6 @@ import org.omegat.gui.matches.IMatcher;
 import org.omegat.gui.matches.MatchesTextArea;
 import org.omegat.gui.tagvalidation.ITagValidation;
 import org.omegat.gui.tagvalidation.TagValidationTool;
-import org.omegat.util.Log;
 
 /**
  * Class which contains all components instances.
@@ -61,21 +62,25 @@ import org.omegat.util.Log;
  * UI thread.
  * 
  * @author Alex Buloichik (alex73mail@gmail.com)
+ * @author Wildrich Fourie
  */
 public class Core {
     private static IProject currentProject;
     private static IMainWindow mainWindow;
-    private static IEditor editor;
+    protected static IEditor editor;
     private static ITagValidation tagValidation;
     private static IMatcher matcher;
-    private static ITokenizer tokenizer;
     private static ISpellChecker spellChecker;
 
     private static IAutoSave saveThread;
 
     private static GlossaryTextArea glossary;
-    private static GoogleTranslateTextArea googleTranslatePane;
+    private static MachineTranslateTextArea machineTranslatePane;
     private static DictionariesTextArea dictionaries;
+
+    private static Map<String, String> cmdLineParams;
+
+    private static final List<IMarker> markers = new ArrayList<IMarker>();
 
     /** Get project instance. */
     public static IProject getProject() {
@@ -107,29 +112,30 @@ public class Core {
         return matcher;
     }
 
-    /** Get tokenizer component instance. */
-    public static ITokenizer getTokenizer() {
-        return tokenizer;
-    }
-
     /** Get spell checker instance. */
     public static ISpellChecker getSpellChecker() {
         return spellChecker;
     }
-    
-    public static GoogleTranslateTextArea getGoogleTranslatePane() {
-        return googleTranslatePane;
+
+    public static MachineTranslateTextArea getMachineTranslatePane() {
+        return machineTranslatePane;
     }
 
     public static IAutoSave getAutoSave() {
         return saveThread;
     }
 
+    /** Get glossary instance. */
+    public static GlossaryTextArea getGlossary() {
+        return glossary;
+    }
+
     /**
      * Initialize application components.
      */
-    public static void initializeGUI(final Map<String, String> params)
-            throws Exception {
+    public static void initializeGUI(final Map<String, String> params) throws Exception {
+        cmdLineParams = params;
+
         // 1. Initialize project
         currentProject = new NotLoadedProject();
 
@@ -142,9 +148,8 @@ public class Core {
         tagValidation = new TagValidationTool(me);
         matcher = new MatchesTextArea(me);
         glossary = new GlossaryTextArea();
-        googleTranslatePane = new GoogleTranslateTextArea();
+        machineTranslatePane = new MachineTranslateTextArea();
         dictionaries = new DictionariesTextArea();
-        tokenizer = createComponent(ITokenizer.class, new Tokenizer(), params);
         spellChecker = new SpellChecker();
 
         SaveThread th = new SaveThread();
@@ -157,40 +162,13 @@ public class Core {
     /**
      * Initialize application components.
      */
-    public static void initializeConsole(final Map<String, String> params)
-            throws Exception {
+    public static void initializeConsole(final Map<String, String> params) throws Exception {
+        cmdLineParams = params;
+
         currentProject = new NotLoadedProject();
         mainWindow = new ConsoleWindow();
 
-        tokenizer = createComponent(ITokenizer.class, new Tokenizer(), params);
-
         SRX.getSRX();
-    }
-
-    /**
-     * Try to create component instance by class specified in command line.
-     * 
-     * @param <T>
-     *            return type
-     * @param interfaceClass
-     *            component interface class
-     * @param defaultImplementation
-     *            default component implementation instance
-     * @param args
-     *            command line
-     * @return component implementation
-     */
-    protected static <T> T createComponent(final Class<T> interfaceClass,
-            final T defaultImplementation, final Map<String, String> params) {
-        try {
-            String implClassName = params.get(interfaceClass.getSimpleName());
-            if (implClassName != null) {
-                return (T) Class.forName(implClassName).newInstance();
-            }
-        } catch (Exception ex) {
-            Log.log(ex);
-        }
-        return defaultImplementation;
     }
 
     /**
@@ -209,5 +187,23 @@ public class Core {
      */
     protected static void setCurrentProject(IProject currentProject) {
         Core.currentProject = currentProject;
+    }
+
+    /**
+     * Register class for calculate marks.
+     * 
+     * @param marker
+     *            marker implementation
+     */
+    public static void registerMarker(IMarker marker) {
+        markers.add(marker);
+    }
+
+    public static List<IMarker> getMarkers() {
+        return markers;
+    }
+
+    public static Map<String, String> getParams() {
+        return cmdLineParams;
     }
 }

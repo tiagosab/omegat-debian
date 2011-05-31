@@ -20,47 +20,44 @@
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-**************************************************************************/
+ **************************************************************************/
 
 package org.omegat.gui.main;
+
+import java.awt.Component;
+
+import javax.swing.JScrollPane;
 
 import com.vlsolutions.swing.docking.DockKey;
 import com.vlsolutions.swing.docking.Dockable;
 import com.vlsolutions.swing.docking.DockingConstants;
-import java.awt.Component;
-import javax.swing.JScrollPane;
 
 /**
  * Dockable ScrollPane for a docking library.
- *
+ * 
  * @author Maxym Mykhalchuk
  */
-public class DockableScrollPane extends JScrollPane implements Dockable
-{
+public class DockableScrollPane extends JScrollPane implements Dockable {
     DockKey dockKey;
-    
+
     /** Updates the name of the docking pane. */
-    public void setName(String name)
-    {
+    public void setName(String name) {
         dockKey.setName(name);
     }
-    
+
     /** Creates a new instance of DockableScrollBox */
-    public DockableScrollPane(String key, String name, Component view, boolean detouchable)
-    {
+    public DockableScrollPane(String key, String name, Component view, boolean detouchable) {
         super(view);
         dockKey = new DockKey(key, name, null, null, DockingConstants.HIDE_BOTTOM);
         dockKey.setFloatEnabled(detouchable);
     }
 
-    public DockKey getDockKey()
-    {
+    public DockKey getDockKey() {
         return dockKey;
     }
 
-    public Component getComponent()
-    {
+    public Component getComponent() {
         return this;
     }
-    
+
 }

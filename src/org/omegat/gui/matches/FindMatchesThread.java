@@ -27,21 +27,23 @@ package org.omegat.gui.matches;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.SwingUtilities;
-
-import org.omegat.core.Core;
-import org.omegat.core.data.LegacyTM;
-import org.omegat.core.data.StringEntry;
+import org.omegat.core.data.IProject;
+import org.omegat.core.data.SourceTextEntry;
+import org.omegat.core.data.TransEntry;
+import org.omegat.core.data.TransMemory;
 import org.omegat.core.matching.FuzzyMatcher;
 import org.omegat.core.matching.ISimilarityCalculator;
 import org.omegat.core.matching.ITokenizer;
 import org.omegat.core.matching.LevenshteinDistance;
 import org.omegat.core.matching.NearString;
+import org.omegat.gui.common.EntryInfoSearchThread;
 import org.omegat.util.OConsts;
-import org.omegat.util.StringUtil;
+import org.omegat.util.OStrings;
 import org.omegat.util.Token;
 
 /**
@@ -50,8 +52,8 @@ import org.omegat.util.Token;
  * Since we can use stemmers to prepare tokens, we should use 3-pass comparison
  * of similarity. Similarity will be calculated in 3 steps:
  * 
- * 1. Split original segment into word-only tokens using stemmer (with stop words
- * list), then compare tokens.
+ * 1. Split original segment into word-only tokens using stemmer (with stop
+ * words list), then compare tokens.
  * 
  * 2. Split original segment into word-only tokens without stemmer, then compare
  * tokens.
@@ -62,44 +64,54 @@ import org.omegat.util.Token;
  * @author Maxym Mykhalchuk
  * @author Alex Buloichik (alex73mail@gmail.com)
  */
-public class FindMatchesThread extends Thread {
-    private static final Logger LOGGER = Logger
-            .getLogger(FindMatchesThread.class.getName());
-    
-    private final MatchesTextArea matcherController;
+public class FindMatchesThread extends EntryInfoSearchThread<List<NearString>> {
+    private static final Logger LOGGER = Logger.getLogger(FindMatchesThread.class.getName());
+
+    /** Current project. */
+    private final IProject project;
 
     /**
      * Entry which is processed currently.
      * 
-     * If entry in controller was changed, it means user has moved to another 
+     * If entry in controller was changed, it means user has moved to another
      * entry, and there is no sense to continue.
      */
-    private final StringEntry processedEntry;
+    private final SourceTextEntry processedEntry;
 
     /** Result list. */
     private List<NearString> result = new ArrayList<NearString>(OConsts.MAX_NEAR_STRINGS + 1);
-    
+
     private ISimilarityCalculator distance = new LevenshteinDistance();
 
     /** Tokens for original string, with and without stems. */
     private Token[] strTokensStem, strTokensNoStem;
-    
+
     /** Tokens for original string, includes numbers and tags. */
     private Token[] strTokensAll;
 
-    public FindMatchesThread(final MatchesTextArea matcherController, final StringEntry entry) {
-        this.matcherController = matcherController;
+    private final ITokenizer tok;
+
+    public FindMatchesThread(final MatchesTextArea matcherPane, final IProject project,
+            final SourceTextEntry entry) {
+        super(matcherPane, entry);
+        this.project = project;
         this.processedEntry = entry;
+        tok = project.getSourceTokenizer();
     }
 
     @Override
-    public void run() {
-        final List<StringEntry> entries = Core.getProject().getUniqueEntries();
-        final List<LegacyTM> memory = Core.getProject().getMemory();
-        if (entries == null || memory == null) {
+    protected List<NearString> search() throws Exception {
+        if (tok == null) {
+            return null;
+        }
+
+        final List<SourceTextEntry> entries = project.getAllEntries();
+        Set<Map.Entry<String, TransEntry>> translations = project.getTranslationsSet();
+        Map<String, TransEntry> orphaned = project.getOrphanedSegments();
+        Map<String, List<TransMemory>> memories = project.getTransMemories();
+        if (entries == null || memories == null || orphaned == null) {
             // project is closed
-            clear();
-            return;
+            return result;
         }
 
         long before = 0;
@@ -109,54 +121,47 @@ public class FindMatchesThread extends Thread {
         }
 
         // get tokens for original string
-        strTokensStem = Core.getTokenizer().tokenizeWords(
-                processedEntry.getSrcText(), ITokenizer.StemmingMode.MATCHING);
-        if (strTokensStem.length == 0) {
-            clear();
-            return;
-            // HP: maybe also test on strTokensComplete.size(), if strTokensSize is 0
-            // HP: perhaps that would result in better number/non-word matching too
-        }
-        strTokensNoStem = Core.getTokenizer().tokenizeWords(
-                processedEntry.getSrcText(), ITokenizer.StemmingMode.NONE);
-        strTokensAll = Core.getTokenizer().tokenizeAllExactly(processedEntry.getSrcText());// HP: includes non-word tokens
+        strTokensStem = tok.tokenizeWords(processedEntry.getSrcText(), ITokenizer.StemmingMode.MATCHING);
+        strTokensNoStem = tok.tokenizeWords(processedEntry.getSrcText(), ITokenizer.StemmingMode.NONE);
+        strTokensAll = tok.tokenizeAllExactly(processedEntry.getSrcText());
+        /* HP: includes non - word tokens */
 
         // travel by project entries
-        for (StringEntry candEntry : entries) {
-            if (matcherController.processedEntry != processedEntry) {
-                // Processed entry changed, because user moved to other entry.
-                // I.e. we don't need to find and display data for old entry.
-                return;
+        for (Map.Entry<String, TransEntry> en : translations) {
+            if (isEntryChanged()) {
+                return null;
             }
-            if (StringUtil.isEmpty(candEntry.getTranslation())) {
-                continue;
-            }
-            if (candEntry == processedEntry) {
+            if (en.getKey().equals(processedEntry.getSrcText())) {
                 // skip original==original entry comparison
                 continue;
             }
-            processEntry(candEntry, null);
+            processEntry(en.getKey(), en.getValue().translation, null);
+        }
+
+        // travel by orphaned
+        String file = OStrings.getString("CT_ORPHAN_STRINGS");
+        for (Map.Entry<String, TransEntry> en : orphaned.entrySet()) {
+            if (isEntryChanged()) {
+                return null;
+            }
+            processEntry(en.getKey(), en.getValue().translation, file);
         }
 
         // travel by translation memories
-        for (LegacyTM mem : memory) {
-            for (StringEntry candEntry : mem.getStrings()) {
-                if (matcherController.processedEntry != processedEntry) {
-                    // Processed entry changed, because user moved to other entry.
-                    // I.e. we don't need to find and display data for old entry.
-                    return;
+        for (Map.Entry<String, List<TransMemory>> en : memories.entrySet()) {
+            for (TransMemory tmen : en.getValue()) {
+                if (isEntryChanged()) {
+                    return null;
                 }
-                if (StringUtil.isEmpty(candEntry.getTranslation())) {
-                    continue;
-                }
-                processEntry(candEntry, mem.getName());
+                processEntry(tmen.source, tmen.target, en.getKey());
             }
         }
 
         // fill similarity data only for result
         for (NearString near : result) {
             // fix for bug 1586397
-            byte[] similarityData = FuzzyMatcher.buildSimilarityData(strTokensAll, Core.getTokenizer().tokenizeAllExactly(near.str.getSrcText()));
+            byte[] similarityData = FuzzyMatcher.buildSimilarityData(strTokensAll,
+                    tok.tokenizeAllExactly(near.source));
             near.attr = similarityData;
         }
 
@@ -166,111 +171,106 @@ public class FindMatchesThread extends Thread {
             LOGGER.finer("Time for find matches: " + (after - before));
         }
 
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                if (matcherController.processedEntry == processedEntry) {
-                    matcherController.setMatches(result);
-                }
-            }
-        });
-    }
-    
-    /**
-     * Clear result window.
-     */
-    private void clear() {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                if (matcherController.processedEntry == processedEntry) {
-                    matcherController.clear();
-                }
-            }
-        });
+        return result;
     }
 
     /**
      * Compare one entry with original entry.
      * 
      * @param candEntry
-     *                entry to compare
+     *            entry to compare
      */
-    protected void processEntry(final StringEntry candEntry,
-            final String tmxName) {
-        Token[] candTokens = Core.getTokenizer().tokenizeWords(
-                candEntry.getSrcText(), ITokenizer.StemmingMode.MATCHING);
-        if (candTokens.length == 0) {
+    protected void processEntry(final String source, final String translation, final String tmxName) {
+        Token[] candTokens = tok.tokenizeWords(source, ITokenizer.StemmingMode.MATCHING);
+
+        // First percent value - with stemming if possible
+        int similarityStem = FuzzyMatcher.calcSimilarity(distance, strTokensStem, candTokens);
+
+        // check if we have chance by first percentage only
+        if (!haveChanceToAdd(similarityStem, Integer.MAX_VALUE, Integer.MAX_VALUE)) {
             return;
         }
 
-        int similarityStem = calcSimilarity(strTokensStem, candTokens);
+        Token[] candTokensNoStem = tok.tokenizeWords(source, ITokenizer.StemmingMode.NONE);
+        // Second percent value - without stemming
+        int similarityNoStem = FuzzyMatcher.calcSimilarity(distance, strTokensNoStem, candTokensNoStem);
 
-        if (similarityStem < OConsts.FUZZY_MATCH_THRESHOLD)
+        // check if we have chance by first and second percentages
+        if (!haveChanceToAdd(similarityStem, similarityNoStem, Integer.MAX_VALUE)) {
             return;
-
-        Token[] candTokensNoStem = Core.getTokenizer().tokenizeWords(
-                candEntry.getSrcText(), ITokenizer.StemmingMode.NONE);
-        int similarityNoStem = calcSimilarity(strTokensNoStem, candTokensNoStem);
-
-        if (haveChanceToAdd(similarityStem, similarityNoStem)) {
-            Token[] candTokensAll = Core.getTokenizer().tokenizeAllExactly(
-                    candEntry.getSrcText());
-            int simAdjusted = calcSimilarity(strTokensAll, candTokensAll);
-
-            addNearString(candEntry, similarityStem, similarityNoStem,
-                    simAdjusted, null, tmxName);
         }
-    }
-    
-    /**
-     * Calculate similarity for tokens arrays(percent).
-     * 
-     * @param str
-     *                original string tokens
-     * @param cand
-     *                candidate string tokens
-     * @return similarity in percents
-     */
-    protected int calcSimilarity(final Token[] str, final Token cand[]) {
-        int ld = distance.compute(str, cand);
-        int similarity = (100 * (Math.max(str.length, cand.length) - ld))
-                / Math.max(str.length, cand.length);
-        return similarity;
+
+        Token[] candTokensAll = tok.tokenizeAllExactly(source);
+        // Third percent value - with numbers, tags, etc.
+        int simAdjusted = FuzzyMatcher.calcSimilarity(distance, strTokensAll, candTokensAll);
+
+        // check if we have chance by first, second and third percentages
+        if (!haveChanceToAdd(similarityStem, similarityNoStem, simAdjusted)) {
+            return;
+        }
+
+        addNearString(source, translation, similarityStem, similarityNoStem, simAdjusted, null, tmxName);
     }
 
     /**
-     * Check if entry have a chance to be added to result list. 
-     * If no, there is no sense to calculate other parameters.
+     * Check if entry have a chance to be added to result list. If no, there is
+     * no sense to calculate other parameters.
      * 
-     * @param similarity
-     *                calculate similarity
-     * @return true if additional calculation need
+     * @param simStem
+     *            similarity with stemming
+     * @param simNoStem
+     *            similarity without stemming
+     * @param simExactly
+     *            exactly similarity
+     * @return true if we have chance
      */
-    protected boolean haveChanceToAdd(final int similarity, final int similarityNoStem) {
+    protected boolean haveChanceToAdd(final int simStem, final int simNoStem, final int simExactly) {
+        if (simStem < OConsts.FUZZY_MATCH_THRESHOLD && simNoStem < OConsts.FUZZY_MATCH_THRESHOLD) {
+            return false;
+        }
         if (result.size() < OConsts.MAX_NEAR_STRINGS) {
             return true;
         }
         NearString st = result.get(result.size() - 1);
-        if (st.score < similarity) {
+        Boolean chanse = checkScore(st.score, simStem);
+        if (chanse == null) {
+            chanse = checkScore(st.scoreNoStem, simNoStem);
+        }
+        if (chanse == null) {
+            chanse = checkScore(st.adjustedScore, simExactly);
+        }
+        if (chanse == null) {
+            chanse = true;
+        }
+        return chanse;
+    }
+
+    private Boolean checkScore(final int storedScore, final int checkedStore) {
+        if (storedScore < checkedStore) {
             return true;
-        } else if (st.score>similarity) {
+        } else if (storedScore > checkedStore) {
             return false;
-        }else {
-            return st.scoreNoStem <= similarityNoStem;
+        } else {
+            return null;
         }
     }
 
     /**
-     * Add near string into result list. 
-     * Near strings sorted by "similarity,simAdjusted"
+     * Add near string into result list. Near strings sorted by
+     * "similarity,simAdjusted"
      */
-    protected void addNearString(final StringEntry candEntry,
-            final int similarity, final int similarityNoStem,
-            final int simAdjusted, final byte[] similarityData,
+    protected void addNearString(final String source, final String translation, final int similarity,
+            final int similarityNoStem, final int simAdjusted, final byte[] similarityData,
             final String tmxName) {
         // find position for new data
         int pos = 0;
         for (int i = 0; i < result.size(); i++) {
             NearString st = result.get(i);
+            if (tmxName == null && st.proj.length() == 0 && source.equals(st.source)) {
+                // the same source text already in list - don't need to add
+                // only if they are from translations
+                return;
+            }
             if (st.score < similarity) {
                 break;
             }
@@ -282,13 +282,19 @@ public class FindMatchesThread extends Thread {
                     if (st.adjustedScore < simAdjusted) {
                         break;
                     }
+                    // Patch contributed by Antonio Vilei
+                    String entrySource = processedEntry.getSrcText();
+                    // text with the same case has precedence
+                    if (similarity == 100 && !st.source.equals(entrySource) && source.equals(entrySource)) {
+                        break;
+                    }
                 }
             }
             pos = i + 1;
         }
 
-        result.add(pos, new NearString(candEntry, similarity, similarityNoStem,
-                simAdjusted, similarityData, tmxName));
+        result.add(pos, new NearString(source, translation, similarity, similarityNoStem, simAdjusted,
+                similarityData, tmxName));
         if (result.size() > OConsts.MAX_NEAR_STRINGS) {
             result.remove(result.size() - 1);
         }

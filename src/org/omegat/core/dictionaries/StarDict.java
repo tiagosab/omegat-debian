@@ -46,8 +46,7 @@ import org.omegat.util.LFileCopy;
 /**
  * Dictionary implementation for StarDict format.
  * 
- * StarDict format described on
- * http://code.google.com/p/babiloo/wiki/StarDict_format
+ * StarDict format described on http://code.google.com/p/babiloo/wiki/StarDict_format
  * 
  * @author Alex Buloichik <alex73mail@gmail.com>
  */
@@ -72,7 +71,7 @@ public class StarDict implements IDictionary {
             throw new Exception("Invalid version of dictionary: " + version);
         }
         contentType = header.get("sametypesequence");
-        if (!"g".equals(contentType) && !"m".equals(contentType)) {
+        if (!"g".equals(contentType) && !"m".equals(contentType) && !"x".equals(contentType)) {
             throw new Exception("Invalid type of dictionary: " + contentType);
         }
     }
@@ -92,8 +91,7 @@ public class StarDict implements IDictionary {
         byte[] idxBytes = readFile(idxFile);
         byte[] dataBytes = readFile(dataFile);
 
-        DataInputStream idx = new DataInputStream(new ByteArrayInputStream(
-                idxBytes));
+        DataInputStream idx = new DataInputStream(new ByteArrayInputStream(idxBytes));
 
         ByteArrayOutputStream mem = new ByteArrayOutputStream();
         while (true) {
@@ -117,10 +115,9 @@ public class StarDict implements IDictionary {
     }
 
     /**
-     * Add new article to dictionary map. If article for this words was already
-     * read, it create array with all articles instead one article, and add new
-     * article to this array. It required to support multiple translations for
-     * one word in dictionary.
+     * Add new article to dictionary map. If article for this words was already read, it create array with all
+     * articles instead one article, and add new article to this array. It required to support multiple
+     * translations for one word in dictionary.
      * 
      * @param key
      *            translated word
@@ -129,8 +126,7 @@ public class StarDict implements IDictionary {
      * @param result
      *            result map
      */
-    private void addArticle(final String key, final String text,
-            final Map<String, Object> result) {
+    private void addArticle(final String key, final String text, final Map<String, Object> result) {
         Object data = result.get(key);
         if (data == null) {
             data = text;
@@ -154,15 +150,14 @@ public class StarDict implements IDictionary {
     /**
      * Get one article.
      */
-    public String readArticle(String word, Object acticleData) {
-        return (String) acticleData;
+    public String readArticle(String word, Object articleData) {
+        return (String) articleData;
     }
 
     /**
      * Load acticle's text.
      */
-    private String readArticleText(byte[] data, int off, int len)
-            throws UnsupportedEncodingException {
+    private String readArticleText(byte[] data, int off, int len) throws UnsupportedEncodingException {
         return new String(data, off, len, UTF8).replace("\n", "<br>");
     }
 
@@ -184,8 +179,7 @@ public class StarDict implements IDictionary {
                 gzFile = new File(file.getPath() + ".dz");
             }
             if (gzFile.exists()) {
-                in = new GZIPInputStream(new BufferedInputStream(
-                        new FileInputStream(gzFile), BUFFER_SIZE));
+                in = new GZIPInputStream(new BufferedInputStream(new FileInputStream(gzFile), BUFFER_SIZE));
             } else {
                 throw new FileNotFoundException(file.getPath());
             }
@@ -203,8 +197,7 @@ public class StarDict implements IDictionary {
      * Read header.
      */
     private Map<String, String> readIFO(File ifoFile) throws Exception {
-        BufferedReader rd = new BufferedReader(new InputStreamReader(
-                new FileInputStream(ifoFile), UTF8));
+        BufferedReader rd = new BufferedReader(new InputStreamReader(new FileInputStream(ifoFile), UTF8));
         try {
             String line = null;
             String first = rd.readLine();

@@ -24,7 +24,10 @@
 
 package org.omegat.gui.editor;
 
+import java.util.List;
+
 import org.omegat.core.data.SourceTextEntry;
+import org.omegat.gui.editor.mark.Mark;
 
 /**
  * Interface for access to editor functionality.
@@ -58,14 +61,13 @@ public interface IEditor {
      * Can be called from any thread.
      */
     SourceTextEntry getCurrentEntry();
-    
+
     /**
      * Get current active entry number.
      * 
      * Can be called from any thread.
      */
     int getCurrentEntryNumber();
-    
 
     /**
      * Activate entry for edit.
@@ -80,9 +82,10 @@ public interface IEditor {
      * Must be called only from UI thread.
      */
     void commitAndDeactivate();
-    
+
     /**
-     * Commits the translation and leave entry activated. Translation will be saved.
+     * Commits the translation and leave entry activated. Translation will be
+     * saved.
      * 
      * Must be called only from UI thread.
      */
@@ -110,15 +113,23 @@ public interface IEditor {
     void nextUntranslatedEntry();
 
     /**
+     * Goto first entry in specified file.
+     * 
+     * @param fileIndex
+     *            file index in project
+     */
+    void gotoFile(int fileIndex);
+
+    /**
      * Goto entry with specified number.
      * 
      * @param entryNum
-     *                entry number
+     *            entry number, starts from 1
      * 
-     * Must be called only from UI thread.
+     *            Must be called only from UI thread.
      */
     void gotoEntry(int entryNum);
-    
+
     /**
      * Set current focus to editor.
      */
@@ -128,10 +139,10 @@ public interface IEditor {
      * Change case of the selected text or if none is selected, of the current
      * word.
      * 
-     * @param newCase :
-     *                lower, title, upper or cycle
-     *                
-     * Must be called only from UI thread.
+     * @param newCase
+     *            : lower, title, upper or cycle
+     * 
+     *            Must be called only from UI thread.
      */
     void changeCase(CHANGE_CASE_TO newCase);
 
@@ -168,30 +179,72 @@ public interface IEditor {
      * 
      * @return interface for read and change editor settings
      * 
-     * Can be called from any thread.
+     *         Can be called from any thread.
      */
     EditorSettings getSettings();
-    
+
     /**
      * Undo editing.
      * 
      * Must be called only from UI thread.
      */
     void undo();
-    
+
     /**
      * Redo editing.
      * 
      * Must be called only from UI thread.
      */
     void redo();
-    
+
     /**
      * Get currently selected text.
      * 
      * @return selected text
      * 
-     * Must be called only from UI thread.
+     *         Must be called only from UI thread.
      */
     String getSelectedText();
+
+    /**
+     * All plugins can call this method for mark something in active entry.
+     * 
+     * @param requiredActiveEntry
+     *            entry which should be active. If user moved to other entry,
+     *            then marks will be skipped
+     * @param marks
+     *            list of marks
+     * @param markerClassName
+     *            marker's class name
+     */
+    void markActiveEntrySource(SourceTextEntry requiredActiveEntry, List<Mark> marks, String markerClassName);
+
+    /**
+     * Register constructor of popup menu.
+     * 
+     * @param priority
+     *            priority of process order
+     * @param constructor
+     *            constructor instance
+     */
+    void registerPopupMenuConstructors(int priority, IPopupMenuConstructor constructor);
+
+    /**
+     * Calls specified marker for reprocess all entries.
+     */
+    void remarkOneMarker(String markerClassName);
+
+    /**
+     * Adds a filter to this editor. The filter causes only the selected entries
+     * to be shown in the editor.
+     * 
+     * @param entryList
+     *            List of project-wide entry numbers
+     */
+    void addFilter(List<Integer> entryList);
+
+    /**
+     * Removes the current filter.
+     */
+    void removeFilter();
 }

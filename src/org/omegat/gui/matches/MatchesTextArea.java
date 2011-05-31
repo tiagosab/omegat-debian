@@ -25,34 +25,32 @@
 
 package org.omegat.gui.matches;
 
-import java.awt.Font;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
-import javax.swing.JTextPane;
 
 import org.omegat.core.Core;
-import org.omegat.core.CoreEvents;
 import org.omegat.core.data.SourceTextEntry;
 import org.omegat.core.data.StringData;
-import org.omegat.core.data.StringEntry;
-import org.omegat.core.events.IEntryEventListener;
-import org.omegat.core.events.IFontChangedEventListener;
-import org.omegat.core.events.IProjectEventListener;
+import org.omegat.core.data.TransEntry;
 import org.omegat.core.matching.NearString;
+import org.omegat.gui.common.EntryInfoPane;
 import org.omegat.gui.main.DockableScrollPane;
 import org.omegat.gui.main.MainWindow;
 import org.omegat.util.Log;
 import org.omegat.util.OStrings;
 import org.omegat.util.Preferences;
-import org.omegat.util.StringUtil;
 import org.omegat.util.Token;
 import org.omegat.util.gui.Styles;
 import org.omegat.util.gui.UIThreadsUtil;
@@ -64,7 +62,7 @@ import org.omegat.util.gui.UIThreadsUtil;
  * @author Maxym Mykhalchuk
  * @author Zoltan Bartko
  */
-public class MatchesTextArea extends JTextPane implements IMatcher {
+public class MatchesTextArea extends EntryInfoPane<List<NearString>> implements IMatcher {
 
     private final List<NearString> matches = new ArrayList<NearString>();
 
@@ -73,92 +71,54 @@ public class MatchesTextArea extends JTextPane implements IMatcher {
 
     private final MainWindow mw;
 
-    protected StringEntry processedEntry;
-
     /** Creates new form MatchGlossaryPane */
     public MatchesTextArea(MainWindow mw) {
+        super(true);
         this.mw = mw;
-        
-        setFont(Core.getMainWindow().getApplicationFont());
-        
+
         String title = OStrings.getString("GUI_MATCHWINDOW_SUBWINDOWTITLE_Fuzzy_Matches");
         Core.getMainWindow().addDockable(new DockableScrollPane("MATCHES", title, this, true));
-        
+
         setEditable(false);
-        setMinimumSize(new java.awt.Dimension(100, 50));
-        addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                onMouseClick(e);
-            }
-        });
-        
-        // find fuzzy match entries on every editor entry change
-        CoreEvents.registerEntryEventListener(new IEntryEventListener() {
-            public void onNewFile(String activeFileName) {
-            }
+        setMinimumSize(new Dimension(100, 50));
 
-            public void onEntryActivated(final StringEntry newEntry) {
-                processedEntry = newEntry;
-                new FindMatchesThread(MatchesTextArea.this, newEntry).start();
-            }
-        });
-        CoreEvents
-                .registerFontChangedEventListener(new IFontChangedEventListener() {
-                    public void onFontChanged(Font newFont) {
-                        MatchesTextArea.this.setFont(newFont);
-                    }
-                });
-        CoreEvents.registerProjectChangeListener(new IProjectEventListener() {
-            public void onProjectChanged(PROJECT_CHANGE_TYPE eventType) {
-                switch (eventType) {
-                case CREATE:
-                case LOAD:
-                case CLOSE:
-                    clear();
-                    break;
-                }
-            }
-        });        
+        addMouseListener(mouseListener);
+    }
+
+    @Override
+    protected void startSearchThread(SourceTextEntry newEntry) {
+        new FindMatchesThread(MatchesTextArea.this, Core.getProject(), newEntry).start();
     }
 
     /**
-     * {@inheritDoc}
+     * Sets the list of fuzzy matches to show in the pane. Each element of the
+     * list should be an instance of {@link NearString}.
      */
-    public NearString getActiveMatch() {
-        UIThreadsUtil.mustBeSwingThread();
-        
-        if (activeMatch < 0 || activeMatch >= matches.size()) {
-            return null;
-        } else {
-            return matches.get(activeMatch);
-        }
-    }
-
-    /**
-     * Sets the list of fuzzy matches to show in the pane. Each element of the list should be an instance of
-     * {@link NearString}.
-     */
-    protected void setMatches(final List<NearString> newMatches) {
+    @Override
+    protected void setFoundResult(final SourceTextEntry se, List<NearString> newMatches) {
         UIThreadsUtil.mustBeSwingThread();
 
         activeMatch = -1;
         matches.clear();
         delimiters.clear();
+
+        if (newMatches == null) {
+            setText("");
+            return;
+        }
+
         matches.addAll(newMatches);
         delimiters.add(0);
         StringBuffer displayBuffer = new StringBuffer();
 
         for (int i = 0; i < newMatches.size(); i++) {
             NearString match = newMatches.get(i);
-            displayBuffer.append(MessageFormat.format(
-                    "{0}) {1}\n{2}\n<{3}/{4}/{5}% {6} >", i + 1, match.str
-                            .getSrcText(), match.str.getTranslation(),
-                    match.score, match.scoreNoStem, match.adjustedScore,
+            displayBuffer.append(MessageFormat.format("{0}) {1}\n{2}\n<{3}/{4}/{5}% {6} >", i + 1,
+                    match.source, match.translation, match.score, match.scoreNoStem, match.adjustedScore,
                     match.proj));
-            
+
             if (i < (newMatches.size() - 1))
-                displayBuffer.append("\n\n"); // NOI18N
+                displayBuffer.append("\n\n");
             delimiters.add(displayBuffer.length());
         }
 
@@ -166,6 +126,29 @@ public class MatchesTextArea extends JTextPane implements IMatcher {
         setActiveMatch(0);
 
         checkForReplaceTranslation();
+    }
+
+    @Override
+    protected void onProjectOpen() {
+        clear();
+    }
+
+    @Override
+    protected void onProjectClose() {
+        clear();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NearString getActiveMatch() {
+        UIThreadsUtil.mustBeSwingThread();
+
+        if (activeMatch < 0 || activeMatch >= matches.size()) {
+            return null;
+        } else {
+            return matches.get(activeMatch);
+        }
     }
 
     /**
@@ -197,11 +180,12 @@ public class MatchesTextArea extends JTextPane implements IMatcher {
             // </HP-experiment>
             NearString thebest = matches.get(0);
             if (thebest.score >= percentage) {
-                String translation = Preferences.getPreferenceDefault(Preferences.BEST_MATCH_EXPLANATORY_TEXT, OStrings
-                        .getString("WF_DEFAULT_PREFIX"))
-                        + thebest.str.getTranslation();
+                String translation = Preferences.getPreferenceDefault(
+                        Preferences.BEST_MATCH_EXPLANATORY_TEXT, OStrings.getString("WF_DEFAULT_PREFIX"))
+                        + thebest.translation;
                 SourceTextEntry currentEntry = Core.getEditor().getCurrentEntry();
-                if (StringUtil.isEmpty(currentEntry.getTranslation())) {
+                TransEntry te = Core.getProject().getTranslation(currentEntry);
+                if (te == null) {
                     Core.getEditor().replaceEditText(translation);
                 }
             }
@@ -209,8 +193,8 @@ public class MatchesTextArea extends JTextPane implements IMatcher {
     }
 
     /**
-     * Sets the index of an active match. It basically highlights the fuzzy match string selected. (numbers start from
-     * 0)
+     * Sets the index of an active match. It basically highlights the fuzzy
+     * match string selected. (numbers start from 0)
      */
     public void setActiveMatch(int activeMatch) {
         UIThreadsUtil.mustBeSwingThread();
@@ -222,28 +206,30 @@ public class MatchesTextArea extends JTextPane implements IMatcher {
         this.activeMatch = activeMatch;
 
         selectAll();
-        setCharacterAttributes(Styles.PLAIN, true);
+        setCharacterAttributes(Styles.createAttributeSet(null, null, null, null), true);
 
         int start = delimiters.get(activeMatch);
         int end = delimiters.get(activeMatch + 1);
 
         NearString match = matches.get(activeMatch);
         // List tokens = match.str.getSrcTokenList();
-        Token[] tokens = Core.getTokenizer().tokenizeAllExactly(match.str.getSrcText()); // fix for bug 1586397
+        Token[] tokens = Core.getProject().getSourceTokenizer().tokenizeAllExactly(match.source);
+        // fix for bug 1586397
         byte[] attributes = match.attr;
         for (int i = 0; i < tokens.length; i++) {
             Token token = tokens[i];
             int tokstart = start + 3 + token.getOffset();
             int tokend = start + 3 + token.getOffset() + token.getLength();
             select(tokstart, tokend);
-            if ((attributes[i] & StringData.UNIQ) != 0)
-                setCharacterAttributes(Styles.TEXT_EXTRA, false);
-            else if ((attributes[i] & StringData.PAIR) != 0)
-                setCharacterAttributes(Styles.TEXT_BORDER, false);
+            if ((attributes[i] & StringData.UNIQ) != 0) {
+                setCharacterAttributes(Styles.createAttributeSet(Color.blue, null, null, null), false);
+            } else if ((attributes[i] & StringData.PAIR) != 0) {
+                setCharacterAttributes(Styles.createAttributeSet(Color.green, null, null, null), false);
+            }
         }
 
         select(start, end);
-        setCharacterAttributes(Styles.BOLD, false);
+        setCharacterAttributes(Styles.createAttributeSet(null, null, true, null), false);
         setCaretPosition(end - 2); // two newlines
         final int fstart = start;
 
@@ -252,28 +238,23 @@ public class MatchesTextArea extends JTextPane implements IMatcher {
 
     /** Clears up the pane. */
     public void clear() {
-        // stop find matches threads
-        processedEntry = null;
+        UIThreadsUtil.mustBeSwingThread();
 
-        UIThreadsUtil.executeInSwingThread(new Runnable() {
-            public void run() {
-                setMatches(new ArrayList<NearString>());
-            }
-        });
+        setFoundResult(null, new ArrayList<NearString>());
     }
 
-    private void onMouseClick(MouseEvent e) {
-        // is there anything?
-        if (matches == null || matches.isEmpty())
-            return;
+    protected MouseListener mouseListener = new MouseAdapter() {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            // is there anything?
+            if (matches == null || matches.isEmpty())
+                return;
 
-        // set up the menu
-        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
             // find out the clicked item
             int clickedItem = -1;
 
             // where did we click?
-            int mousepos = this.viewToModel(e.getPoint());
+            int mousepos = MatchesTextArea.this.viewToModel(e.getPoint());
 
             int i;
             for (i = 0; i < delimiters.size() - 1; i++) {
@@ -289,49 +270,73 @@ public class MatchesTextArea extends JTextPane implements IMatcher {
             if (clickedItem == -1)
                 clickedItem = delimiters.size() - 1;
 
-            final int clicked = clickedItem;
-
-            // create the menu
-            JPopupMenu popup = new JPopupMenu();
-
-            JMenuItem item = popup.add(OStrings.getString("MATCHES_INSERT"));
-            item.addActionListener(new ActionListener() {
-                // the action: insert this match
-                public void actionPerformed(ActionEvent e) {
-                    setActiveMatch(clicked);
-                    mw.doInsertTrans();
-                }
-            });
-
-            item = popup.add(OStrings.getString("MATCHES_REPLACE"));
-            item.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    setActiveMatch(clicked);
-                    mw.doRecycleTrans();
-                }
-            });
-
-            popup.addSeparator();
-
-            if (clicked >= matches.size())
+            if (clickedItem >= matches.size())
                 return;
 
-            final NearString ns = matches.get(clicked);
-            String project = ns.proj;
-
-            item = popup.add(OStrings.getString("MATCHES_GO_TO_SEGMENT_SOURCE"));
-
-            if (project == null || project.equals("")) {
-                item.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        Core.getEditor().gotoEntry(ns.str.getParentList().first().entryNum() + 1);
-                    }
-                });
-            } else {
-                item.setEnabled(false);
+            // set up the menu
+            if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+                mouseRightClick(clickedItem, e.getPoint());
             }
-
-            popup.show(this, e.getX(), e.getY());
         }
+    };
+
+    private void mouseOneClick(final int clickedItem, final Point clickedPoint) {
+        // show colored source segment
+    }
+
+    private void mouseRightClick(final int clickedItem, final Point clickedPoint) {
+        // create the menu
+        JPopupMenu popup = new JPopupMenu();
+
+        JMenuItem item = popup.add(OStrings.getString("MATCHES_INSERT"));
+        item.addActionListener(new ActionListener() {
+            // the action: insert this match
+            public void actionPerformed(ActionEvent e) {
+                setActiveMatch(clickedItem);
+                mw.doInsertTrans();
+            }
+        });
+
+        item = popup.add(OStrings.getString("MATCHES_REPLACE"));
+        item.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                setActiveMatch(clickedItem);
+                mw.doRecycleTrans();
+            }
+        });
+
+        popup.addSeparator();
+
+        final NearString ns = matches.get(clickedItem);
+        String project = ns.proj;
+
+        item = popup.add(OStrings.getString("MATCHES_GO_TO_SEGMENT_SOURCE"));
+
+        if (project == null || project.equals("")) {
+            item.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    /*
+                     * Goto segment with contains matched source. Since it
+                     * enough rarely executed code, it will be better to find
+                     * this segment each time, instead use additional memory
+                     * storage.
+                     */
+                    List<SourceTextEntry> entries = Core.getProject().getAllEntries();
+                    int entryNum = 0;
+                    for (int i = 0; i < entries.size(); i++) {
+                        if (entries.get(i).getSrcText().equals(ns.source)) {
+                            // found entry with the same source
+                            entryNum = i;
+                            break;
+                        }
+                    }
+                    Core.getEditor().gotoEntry(entryNum + 1);
+                }
+            });
+        } else {
+            item.setEnabled(false);
+        }
+
+        popup.show(this, clickedPoint.x, clickedPoint.y);
     }
 }
