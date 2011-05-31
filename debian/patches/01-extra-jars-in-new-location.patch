@@ -1,16 +1,19 @@
 Author: Tiago Saboga <tiagosaboga@gmail.com>
 Description: Do not specify paths in Class-path.
---- omegat-2.0.5.2+dfsg.orig/manifest-template.mf
-+++ omegat-2.0.5.2+dfsg/manifest-template.mf
-@@ -3,4 +3,4 @@
- License: GNU Public License version 2
+--- a/manifest-template.mf
++++ b/manifest-template.mf
+@@ -3,7 +3,7 @@
+ License: GNU Public License version 2 or later
  Specification-Version: 1
  Implementation-Version: @version@
--Class-Path: lib/lib-mnemonics.jar lib/htmlparser.jar lib/MRJAdapter.jar lib/vldocking_2.1.4.jar lib/jna.jar lib/swing-layout-1.0.jar lib/jmyspell-core-1.0.0-beta-2.jar lib/activation.jar lib/jaxb-api.jar lib/jaxb-impl.jar lib/jsr173_1.0_api.jar
-+Class-Path: omegat-lib-mnemonics.jar libhtmlparser.jar vldocking.jar jna.jar swing-layout.jar activation.jar jaxb-api.jar jaxb-impl.jar jsr173_1.0_api.jar
---- omegat-2.0.5.2+dfsg.orig/nbproject/project.properties
-+++ omegat-2.0.5.2+dfsg/nbproject/project.properties
-@@ -50,7 +50,6 @@
+-Class-Path: lib/lib-mnemonics.jar lib/htmlparser.jar lib/MRJAdapter.jar lib/vldocking_2.1.4.jar lib/jna.jar lib/swing-layout-1.0.jar lib/jmyspell-core-1.0.0-beta-2.jar lib/activation.jar lib/jaxb-api.jar lib/jaxb-impl.jar lib/jsr173_1.0_api.jar lib/swing-worker-1.2.jar
++Class-Path: omegat-lib-mnemonics.jar libhtmlparser.jar vldocking.jar jna.jar swing-layout.jar activation.jar jaxb-api.jar jaxb-impl.jar jsr173_1.0_api.jar swing-worker.jar
+ OmegaT-Plugin: true
+ 
+ Name: org.omegat.filters3.xml.android.AndroidFilter
+--- a/nbproject/project.properties
++++ b/nbproject/project.properties
+@@ -52,7 +52,6 @@
  jnlp.enabled=false
  jnlp.offline-allowed=false
  jnlp.signed=false

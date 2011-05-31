@@ -1,8 +1,8 @@
 Author: Tiago Saboga <tiagosaboga@gmail.com>
 Description: Use debian's libhunspell.
---- omegat-2.0.5.2+dfsg.orig/build.xml
-+++ omegat-2.0.5.2+dfsg/build.xml
-@@ -63,10 +63,6 @@
+--- a/build.xml
++++ b/build.xml
+@@ -64,10 +64,6 @@
      
      <target name="-post-jar">
          <delete file="${dist.dir}/README.TXT"/>
@@ -13,44 +13,43 @@ Description: Use debian's libhunspell.
      </target>
      
      <!-- Creates a zip with two localization packs -->
---- omegat-2.0.5.2+dfsg.orig/src/org/omegat/core/spellchecker/SpellChecker.java
-+++ omegat-2.0.5.2+dfsg/src/org/omegat/core/spellchecker/SpellChecker.java
-@@ -108,9 +108,7 @@
-                     + File.separator
-                     + mapLibraryName(OConsts.SPELLCHECKER_LIBRARY_NAME);
-         } else {
--            libraryPath = StaticUtils.installDir() + File.separator
--                    + OConsts.NATIVE_LIBRARY_DIR + File.separator
--                    + mapLibraryName(OConsts.SPELLCHECKER_LIBRARY_NAME);
-+            libraryPath = OConsts.SPELLCHECKER_LIBRARY_NAME;
-         }
-         
-         try {
-@@ -148,8 +146,9 @@
-                 Core.getProject().getProjectProperties().getTargetLanguage()
-                 .getLocaleCode();
-         
--        String dictionaryDir = Preferences.getPreference(
--                Preferences.SPELLCHECKER_DICTIONARY_DIRECTORY);
+--- a/src/org/omegat/core/spellchecker/SpellChecker.java
++++ b/src/org/omegat/core/spellchecker/SpellChecker.java
+@@ -115,7 +115,9 @@
+         // initialize the spell checker - get the data from the preferences
+         String language = Core.getProject().getProjectProperties().getTargetLanguage().getLocaleCode();
+ 
+-        String dictionaryDir = Preferences.getPreference(Preferences.SPELLCHECKER_DICTIONARY_DIRECTORY);
 +        String dictionaryDir = Preferences.getPreferenceDefault(
-+               Preferences.SPELLCHECKER_DICTIONARY_DIRECTORY,
-+               OConsts.SPELLCHECKER_SYSTEM_DICTIONARY_DIRECTORY);
-         
++                     Preferences.SPELLCHECKER_DICTIONARY_DIRECTORY,
++                     OConsts.SPELLCHECKER_SYSTEM_DICTIONARY_DIRECTORY);
+ 
          if (dictionaryDir != null) {
-             String affixName = dictionaryDir + File.separator + language +
---- omegat-2.0.5.2+dfsg.orig/src/org/omegat/util/OConsts.java
-+++ omegat-2.0.5.2+dfsg/src/org/omegat/util/OConsts.java
-@@ -94,8 +94,12 @@
-     public static final String LEARNED_WORD_LIST_FILE_NAME = "learned_words.txt";   // NOI18N
-     
+             String affixName = dictionaryDir + File.separator + language + OConsts.SC_AFFIX_EXTENSION;
+--- a/src/org/omegat/util/OConsts.java
++++ b/src/org/omegat/util/OConsts.java
+@@ -100,7 +100,11 @@
+     public static final String LEARNED_WORD_LIST_FILE_NAME = "learned_words.txt";
+ 
      /** The name of the spell checking library */
--    public static final String SPELLCHECKER_LIBRARY_NAME = "hunspell";  // NOI18N
-+    public static final String SPELLCHECKER_LIBRARY_NAME = "hunspell-1.2";  // NOI18N
-     
+-    public static final String SPELLCHECKER_LIBRARY_NAME = "hunspell";
++    public static final String SPELLCHECKER_LIBRARY_NAME = "hunspell-1.2";
++
 +    /** directory of system dictionaries */
 +    public static final String SPELLCHECKER_SYSTEM_DICTIONARY_DIRECTORY =
-+           "/usr/share/myspell/dicts";   // NOI18N
-+
++        "/usr/share/myspell/dicts";
+ 
      /** the native library directory */
-     public static final String NATIVE_LIBRARY_DIR = "native";   // NOI18N
-     
+     public static final String NATIVE_LIBRARY_DIR = "native";
+--- a/src/org/omegat/core/spellchecker/SpellCheckerHunspell.java
++++ b/src/org/omegat/core/spellchecker/SpellCheckerHunspell.java
+@@ -76,8 +76,7 @@
+                 libraryPath = Native.getWebStartLibraryPath(OConsts.SPELLCHECKER_LIBRARY_NAME)
+                         + File.separator + mapLibraryName(OConsts.SPELLCHECKER_LIBRARY_NAME);
+             } else {
+-                libraryPath = StaticUtils.installDir() + File.separator + OConsts.NATIVE_LIBRARY_DIR
+-                        + File.separator + mapLibraryName(OConsts.SPELLCHECKER_LIBRARY_NAME);
++                libraryPath = OConsts.SPELLCHECKER_LIBRARY_NAME;
+             }
+ 
+             hunspell = (Hunspell) Native.loadLibrary(libraryPath, Hunspell.class);

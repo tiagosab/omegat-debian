@@ -1,0 +1,28 @@
+Index: git-deb/src/org/omegat/gui/main/ProjectUICommands.java
+===================================================================
+--- git-deb.orig/src/org/omegat/gui/main/ProjectUICommands.java	2011-05-30 16:31:33.000000000 -0300
++++ git-deb/src/org/omegat/gui/main/ProjectUICommands.java	2011-05-30 16:31:37.000000000 -0300
+@@ -28,8 +28,8 @@
+ 
+ import javax.swing.JOptionPane;
+ import javax.swing.SwingUtilities;
++import javax.swing.SwingWorker;
+ 
+-import org.jdesktop.swingworker.SwingWorker;
+ import org.omegat.core.Core;
+ import org.omegat.core.data.ProjectFactory;
+ import org.omegat.core.data.ProjectProperties;
+Index: git-deb/src/org/omegat/gui/main/MainWindowMenuHandler.java
+===================================================================
+--- git-deb.orig/src/org/omegat/gui/main/MainWindowMenuHandler.java	2011-05-30 16:32:54.000000000 -0300
++++ git-deb/src/org/omegat/gui/main/MainWindowMenuHandler.java	2011-05-30 16:33:37.000000000 -0300
+@@ -31,8 +31,8 @@
+ 
+ import javax.swing.JDialog;
+ import javax.swing.JOptionPane;
++import javax.swing.SwingWorker;
+ 
+-import org.jdesktop.swingworker.SwingWorker;
+ import org.omegat.core.Core;
+ import org.omegat.core.CoreEvents;
+ import org.omegat.core.data.SourceTextEntry;

@@ -1,9 +1,9 @@
 Author: Tiago Saboga <tiagosaboga@gmail.com>
 Description: Remove unneeded library (only useful to Mac OS).
---- omegat-2.0.5.2+dfsg.orig/src/org/omegat/gui/main/MainWindowMenu.java
-+++ omegat-2.0.5.2+dfsg/src/org/omegat/gui/main/MainWindowMenu.java
-@@ -42,8 +42,6 @@
- import javax.swing.JMenuItem;
+--- a/src/org/omegat/gui/main/MainWindowMenu.java
++++ b/src/org/omegat/gui/main/MainWindowMenu.java
+@@ -45,8 +45,6 @@
+ import javax.swing.JRadioButtonMenuItem;
  import javax.swing.JSeparator;
  
 -import net.roydesign.mac.MRJAdapter;
@@ -11,17 +11,17 @@ Description: Remove unneeded library (only useful to Mac OS).
  import org.omegat.core.Core;
  import org.omegat.core.CoreEvents;
  import org.omegat.core.events.IApplicationEventListener;
-@@ -214,8 +212,6 @@
+@@ -249,8 +247,6 @@
          setActionCommands();
          MainWindowMenuShortcuts.setShortcuts(mainMenu);
  
 -        initMacSpecific();
--        
+-
          CoreEvents.registerApplicationEventListener(new IApplicationEventListener() {
              public void onApplicationStartup() {
-                 updateCheckboxesOnStart();        
-@@ -252,26 +248,6 @@
-         updateEditOverwriteMachineTranslationMenuItem();
+                 updateCheckboxesOnStart();
+@@ -304,26 +300,6 @@
+                         .getSettings().getDisplayModificationInfo()));
      }
  
 -    /**
