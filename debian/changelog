@@ -1,4 +1,4 @@
-omegat (2.0.5.2+dfsg-1) unstable; urgency=low
+omegat (2.2.3~beta4+dfsg-1) unstable; urgency=low
 
   * New upstream release (Closes: #558708).
   * debian/repack-source.sh: fix repackaged file name.
