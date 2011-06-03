@@ -1,0 +1,21 @@
+--- a/build.xml
++++ b/build.xml
+@@ -314,14 +314,12 @@
+     <target name="all" depends="l10n-pack,src,jar,zip,win,linux,mac" />
+ 
+ 	<target name="gen">
+-		<taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
+-			<classpath>
+-				<fileset dir="lib" includes="**/*.jar" />
+-				<fileset dir="gen/lib" includes="**/*.jar" />
+-			</classpath>
++		<taskdef name="xjc"
++                         classname="org.apache.ws.jaxme.generator.XJCTask"
++                         classpath="/usr/share/java/jaxme2.jar:/usr/share/java/jaxmejs.jar:/usr/share/java/jaxmexs.jar">
+ 		</taskdef>
+ 
+-		<xjc schema="src/schemas/srx20.xsd" destdir="src" package="gen.core.segmentation" />
++		<xjc schema="src/schemas/srx20.xsd" target="src" package="gen.core.segmentation" />
+ 	</target>
+ 
+ 	<target name="docindexgen" depends="jar">
