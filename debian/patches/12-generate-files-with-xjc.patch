@@ -1,0 +1,24 @@
+--- a/build.xml
++++ b/build.xml
+@@ -314,14 +314,13 @@
+     <target name="all" depends="l10n-pack,src,jar,zip,win,linux,mac" />
+ 
+ 	<target name="gen">
+-		<taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
+-			<classpath>
+-				<fileset dir="lib" includes="**/*.jar" />
+-				<fileset dir="gen/lib" includes="**/*.jar" />
+-			</classpath>
+-		</taskdef>
+-
+-		<xjc schema="src/schemas/srx20.xsd" destdir="src" package="gen.core.segmentation" />
++            <exec executable="/usr/bin/xjc">
++                <arg file="src/schemas/srx20.xsd"/>
++                <arg value="-d"/>
++                <arg value="src"/>
++                <arg value="-p"/>
++                <arg value="gen.core.segmentation"/>
++            </exec>     
+ 	</target>
+ 
+ 	<target name="docindexgen" depends="jar">

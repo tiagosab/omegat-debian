@@ -4,3 +4,4 @@
 06-use-external-hunspell.patch
 08-use-java-swingworker.patch
 10-do-not-load-jmyspell.patch
+12-generate-files-with-xjc.patch
