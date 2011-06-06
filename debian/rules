@@ -12,7 +12,7 @@ configure-stamp:
 build: build-stamp
 build-stamp: configure-stamp
 	dh_testdir
-	JAVA_HOME=$(JAVA_HOME) ant $(ANT_OPTIONS) jar
+	JAVA_HOME=$(JAVA_HOME) ant $(ANT_OPTIONS) gen jar
 	docbook-to-man debian/omegat.sgml > omegat.1
 	convert images/OmegaT.ico[0] images/OmegaT.xpm
 	touch $@
