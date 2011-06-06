@@ -1,6 +1,6 @@
 --- a/build.xml
 +++ b/build.xml
-@@ -314,14 +314,12 @@
+@@ -314,14 +314,13 @@
      <target name="all" depends="l10n-pack,src,jar,zip,win,linux,mac" />
  
  	<target name="gen">
@@ -9,13 +9,16 @@
 -				<fileset dir="lib" includes="**/*.jar" />
 -				<fileset dir="gen/lib" includes="**/*.jar" />
 -			</classpath>
-+		<taskdef name="xjc"
-+                         classname="org.apache.ws.jaxme.generator.XJCTask"
-+                         classpath="/usr/share/java/jaxme2.jar:/usr/share/java/jaxmejs.jar:/usr/share/java/jaxmexs.jar">
- 		</taskdef>
- 
+-		</taskdef>
+-
 -		<xjc schema="src/schemas/srx20.xsd" destdir="src" package="gen.core.segmentation" />
-+		<xjc schema="src/schemas/srx20.xsd" target="src" package="gen.core.segmentation" />
++            <exec executable="/usr/bin/xjc">
++                <arg file="src/schemas/srx20.xsd"/>
++                <arg value="-d"/>
++                <arg value="src"/>
++                <arg value="-p"/>
++                <arg value="gen.core.segmentation"/>
++            </exec>     
  	</target>
  
  	<target name="docindexgen" depends="jar">
