@@ -1,6 +1,6 @@
 --- a/build.xml
 +++ b/build.xml
-@@ -314,14 +314,13 @@
+@@ -314,14 +314,27 @@
      <target name="all" depends="l10n-pack,src,jar,zip,win,linux,mac" />
  
  	<target name="gen">
@@ -18,6 +18,20 @@
 +                <arg value="src"/>
 +                <arg value="-p"/>
 +                <arg value="gen.core.segmentation"/>
++            </exec>     
++            <exec executable="/usr/bin/xjc">
++                <arg file="src/schemas/filters.xsd"/>
++                <arg value="-d"/>
++                <arg value="src"/>
++                <arg value="-p"/>
++                <arg value="gen.core.filters"/>
++            </exec>     
++            <exec executable="/usr/bin/xjc">
++                <arg file="src/schemas/tbx.xsd"/>
++                <arg value="-d"/>
++                <arg value="src"/>
++                <arg value="-p"/>
++                <arg value="gen.core.tbx"/>
 +            </exec>     
  	</target>
  
