@@ -1,6 +1,8 @@
 omegat (2.2.3~beta4+dfsg-1) unstable; urgency=low
 
   * New upstream release (Closes: #558708).
+  * Regenerate files under src/gen.
+  * Use libjaxme-java instead of jaxb from netbeans-ide
   * debian/repack-source.sh: fix repackaged file name.
   * Bug fix: "startup script choose to use openjdk, ignoring
     alternatives.", thanks to Satoru KURASHIKI (Closes: #526239).
