@@ -1,6 +1,7 @@
 omegat (2.2.3~beta4+dfsg-1) unstable; urgency=low
 
   * New upstream release (Closes: #558708).
+  * State copyright for source file src/schemas/srx20.xsd.
   * Remove debian/watch: unable to follow upstream naming scheme.
   * Do not use sun java: we are using jaxb from openjdk.
   * javahelp-filters: Remove sun proprietary dtds.
@@ -19,7 +20,7 @@ omegat (2.2.3~beta4+dfsg-1) unstable; urgency=low
   * debian/control: 
     - (Homepage): Point to main OmegaT page.
 
- -- Tiago Saboga <tiagosaboga@gmail.com>  Tue, 07 Jun 2011 11:51:36 -0300
+ -- Tiago Saboga <tiagosaboga@gmail.com>  Tue, 07 Jun 2011 12:03:11 -0300
 
 omegat (1.8.1.2+dfsg-1.1) unstable; urgency=low
 

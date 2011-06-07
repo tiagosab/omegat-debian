@@ -72,6 +72,21 @@ Copyright:
    Copyright 2009 Vito Smolej.
    The Instant Start Guide is Copyright 2005-2009 Samuel Murray.
 
+   The file src/schemas/srx20.xsd is Copyright The Localisation
+   Industry Standards Association [LISA] 2006. The file header states
+   "All Rights Reserved", but according to the LISA website (as of
+   2011-06-07), all LISA Standards have been transfered to the public
+   domain.
+
+      "As of 2011 February 28, the Localization Industry Standards
+      Association (LISA) was declared insolvent. The results of the
+      Extraordinary General Assembly meeting and ballot of 2011 April
+      21 LISA has formallized the dissolution of the association and
+      the transfer of the LISA Standards to the public domain.
+
+      The company Société fiduciaire Zemp & Associés, SàrL in Geneva
+      is designated as the liquidator of the association’s assets."
+
 License: 
 
    OmegaT is free software; you can redistribute it and/or
