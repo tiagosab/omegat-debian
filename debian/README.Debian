@@ -2,13 +2,21 @@ OmegaT for Debian
 -----------------
 
 * The source archive available at sourceforge is not source-only, as
-it contains executable files for another platform without sources and
-the jar files for three libraries: htmlparser, MRJAdapter and
-vldocking.
-    ** MRJAdapter is a Mac-only library, so I'm removing it from the
-    source.
-    ** htmlparser and vldocking are available in debian; just remove 
-    it from the original tarball.
+it contains executable files for another platform and the jar files
+for several libraries. All binary files are removed from archive.
+    ** find . \( -iname '*.jar' -or -iname '*.exe' -or -iname '*.dll' \
+         -or -iname '*.dylib' -or -iname '*.so' \) \
+         -exec git rm \{\} \;
+
+* Sources and licenses for third-parties libraries are also removed.
+    ** git rm -r lib/*
+    ** find . -iname 'mrjadapter*' -exec git rm \{\} \;
+
+* Test data contains files with unknown licenses.
+    ** git rm -r test/data
+
+* Sun proprietary dtds
+    ** git rm addons/javahelp-filters/src/org/omegat/filters2/javahelp/resources/*
 
 * The package does not install in fhs directories, but rather in a
 single dir. All installation is hence done in debian files, and some
@@ -17,4 +25,4 @@ locations.
     ** jar files are installed in /usr/share/java
     ** docs are installed in /usr/share/doc/omegat/html
 
- -- Tiago Saboga <tiagosaboga@gmail.com>, Thu, 23 Jul 2008 10:13:42 -0300
+ -- Tiago Saboga <tiagosaboga@gmail.com>, Tue,  7 Jun 2011 11:52:06 -0300
