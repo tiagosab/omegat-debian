@@ -1,7 +1,5 @@
-Index: git-deb/src/org/omegat/core/spellchecker/SpellChecker.java
-===================================================================
---- git-deb.orig/src/org/omegat/core/spellchecker/SpellChecker.java	2011-05-30 17:15:10.000000000 -0300
-+++ git-deb/src/org/omegat/core/spellchecker/SpellChecker.java	2011-05-30 17:15:10.000000000 -0300
+--- a/src/org/omegat/core/spellchecker/SpellChecker.java
++++ b/src/org/omegat/core/spellchecker/SpellChecker.java
 @@ -151,13 +151,6 @@
                  } catch (Error err) {
                      Log.log("Error loading hunspell: " + err.getMessage());
@@ -16,10 +14,8 @@ Index: git-deb/src/org/omegat/core/spellchecker/SpellChecker.java
              }
              if (checker == null) {
                  checker = new SpellCheckerDummy();
-Index: git-deb/src/org/omegat/core/spellchecker/SpellCheckerJMySpell.java
-===================================================================
---- git-deb.orig/src/org/omegat/core/spellchecker/SpellCheckerJMySpell.java	2011-05-30 17:17:02.000000000 -0300
-+++ /dev/null	1970-01-01 00:00:00.000000000 +0000
+--- a/src/org/omegat/core/spellchecker/SpellCheckerJMySpell.java
++++ /dev/null
 @@ -1,70 +0,0 @@
 -/**************************************************************************
 - OmegaT - Computer Assisted Translation (CAT) tool 
