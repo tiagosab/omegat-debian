@@ -1,0 +1,11 @@
+--- a/src/org/omegat/util/Log.java
++++ b/src/org/omegat/util/Log.java
+@@ -50,7 +50,7 @@
+     private static Logger LOGGER;
+ 
+     static {
+-        LOGGER = Logger.global;
++        LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+ 
+         boolean loaded = false;
+         File usersLogSettings = new File(StaticUtils.getConfigDir(), "logger.properties");
