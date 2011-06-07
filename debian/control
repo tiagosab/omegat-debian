@@ -5,8 +5,7 @@ Maintainer: Debian Java Maintainers <pkg-java-maintainers@lists.alioth.debian.or
 Uploaders: Tiago Saboga <tiagosaboga@gmail.com>
 Build-Depends: debhelper (>= 7), openjdk-6-jdk, ant
 Build-Depends-Indep: docbook-to-man, imagemagick, libvldocking-java,
- libhtmlparser-java, libjna-java, libswing-layout-java, tofrodos,
- libjaxme-java
+ libhtmlparser-java, libjna-java, libswing-layout-java, tofrodos
 Homepage: http://www.omegat.org
 Vcs-Svn: svn://svn.debian.org/svn/pkg-java/trunk/omegat
 Vcs-Browser: http://svn.debian.org/wsvn/pkg-java/trunk/omegat
@@ -14,9 +13,8 @@ Standards-Version: 3.9.1
 
 Package: omegat
 Architecture: all
-Depends: ${misc:Depends}, openjdk-6-jre | sun-java6-jre,
- libvldocking-java, libhtmlparser-java, libswing-layout-java,
- libaccess-bridge-java-jni, libjaxme-java
+Depends: ${misc:Depends}, openjdk-6-jre, libvldocking-java,
+ libhtmlparser-java, libswing-layout-java, libaccess-bridge-java-jni,
 Recommends: libjna-java, libhunspell-1.2-0
 Description: Computer Assisted Translation (CAT) tool
  OmegaT's main features are
