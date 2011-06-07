@@ -1,9 +1,0 @@
-Sources for Debian
-------------------
-
-This package uses the quilt system for maintaining patches.
-
-Please see /usr/share/doc/quilt/README.source for instructions
-about how to apply and deapply patches.
-
- -- Tiago Saboga <tiagosaboga@gmail.com>, Mon, 30 May 2011 11:18:08 -0300

@@ -11,12 +11,13 @@ omegat (2.2.3~beta4+dfsg-1) unstable; urgency=low
     alternatives.", thanks to Satoru KURASHIKI (Closes: #526239).
   * Bug fix: "debhelper but no ${misc:Depends}", thanks to lintian.
   * Change to quilt patching system.
-  * Switch to dpkg-source 3.0 (quilt) format.
+  * Switch to dpkg-source 3.0 (quilt) format:
+    - Remove debian/README.source: not needed any more.
   * Acknowledge NMU (thanks to Tony Mancill) (Closes: #602267).
   * debian/control: 
     - (Homepage): Point to main OmegaT page.
 
- -- Tiago Saboga <tiagosaboga@gmail.com>  Tue, 07 Jun 2011 11:06:58 -0300
+ -- Tiago Saboga <tiagosaboga@gmail.com>  Tue, 07 Jun 2011 11:20:13 -0300
 
 omegat (1.8.1.2+dfsg-1.1) unstable; urgency=low
 
