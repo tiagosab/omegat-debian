@@ -1,3 +1,11 @@
+Description: Remove references to sun proprietary dtds.
+
+Sun dtds are shipped within javahelp-filters. They are being removed
+from tarball, and here we avoid looking for them locally.
+
+Forwarded: no
+Author: Tiago Saboga <tiagosaboga@gmail.com>
+Last-Update: 2011-06-07
 --- a/addons/javahelp-filters/src/org/omegat/filters2/xml2/XMLHandler2.java
 +++ b/addons/javahelp-filters/src/org/omegat/filters2/xml2/XMLHandler2.java
 @@ -143,28 +143,6 @@

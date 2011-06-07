@@ -1,3 +1,10 @@
+Description: Disable JMySpell loading.
+
+JMySpell is not available on Debian. Ideally, we should patch upstream
+to use it only if available, but for now we disable it entirely.
+
+Author: Tiago Saboga <tiagosaboga@gmail.com>
+Last-Update: 2011-06-07
 --- a/src/org/omegat/core/spellchecker/SpellChecker.java
 +++ b/src/org/omegat/core/spellchecker/SpellChecker.java
 @@ -151,13 +151,6 @@

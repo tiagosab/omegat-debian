@@ -1,3 +1,10 @@
+Description: Eliminate deprecated global warning.
+
+Patch has been mailed upstream, which is considering it.
+
+Forwarded: yes
+Author: Satoru KURASHIKI <lurdan@gmail.com>
+Last-Update: 2011-06-07
 --- a/src/org/omegat/util/Log.java
 +++ b/src/org/omegat/util/Log.java
 @@ -50,7 +50,7 @@

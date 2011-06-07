@@ -1,3 +1,10 @@
+Description: Use SwingWorker from openjdk.
+
+Upstream is still bound to java 5 compatibility, what maked this patch
+unacceptable.
+
+Author: Tiago Saboga <tiagosaboga@gmail.com>
+Last-Update: 2011-06-07
 --- a/src/org/omegat/gui/main/ProjectUICommands.java
 +++ b/src/org/omegat/gui/main/ProjectUICommands.java
 @@ -28,8 +28,8 @@

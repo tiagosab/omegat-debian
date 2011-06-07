@@ -1,3 +1,10 @@
+Description: Regenerate jaxb files with xjc.
+
+Upstream build system uses ant task, which is not working for us for
+unknown reasons.
+
+Author: Tiago Saboga <tiagosaboga@gmail.com>
+Last-Update: 2011-06-07
 --- a/build.xml
 +++ b/build.xml
 @@ -314,14 +314,27 @@
