@@ -1,0 +1,5 @@
+# This package has no proper watch file because I was not able to
+# find a long-term working regex to match upstream and debian versions.
+# Patches are welcome.
+
+# Tiago Saboga <tiagosaboga@gmail.com>  Tue, 07 Jun 2011 17:16:59 -0300
