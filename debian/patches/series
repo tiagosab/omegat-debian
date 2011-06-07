@@ -6,3 +6,4 @@
 10-do-not-load-jmyspell.patch
 12-generate-files-with-xjc.patch
 14-fix-deprecated-global.patch
+15-do-not-use-sun-proprietary-dtds.patch

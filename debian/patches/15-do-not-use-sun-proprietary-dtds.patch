@@ -1,0 +1,31 @@
+--- a/addons/javahelp-filters/src/org/omegat/filters2/xml2/XMLHandler2.java
++++ b/addons/javahelp-filters/src/org/omegat/filters2/xml2/XMLHandler2.java
+@@ -143,28 +143,6 @@
+         write("</"+qName+">");
+     }
+ 
+-    /** Resolve an external entity to work offline or behind proxy. */
+-    public InputSource resolveEntity(String publicId, String systemId) 
+-            throws IOException, SAXException
+-    {
+-        String orig = systemId;
+-        int lastslash = systemId.lastIndexOf('/');
+-        if( lastslash>=0 )
+-        {
+-            String name = orig.substring(lastslash+1);
+-            String res = "/org/omegat/filters2/javahelp/resources/"+name;
+-            InputStream stream = getClass().getResourceAsStream(res);
+-            return new InputSource(stream);
+-        }
+-        return null;
+-    }
+-    /** The older {@link #resolveEntity} method is overridden to call this one. */
+-    public InputSource resolveEntity(String name, String publicId, String baseURI, String systemId) 
+-            throws SAXException, IOException
+-    {
+-        return resolveEntity(publicId, systemId);
+-    }
+-
+     /** Receive notification of ignorable whitespace in element content.*/
+     public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException
+     {
