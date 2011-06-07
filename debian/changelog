@@ -1,6 +1,7 @@
 omegat (2.2.3~beta4+dfsg-1) unstable; urgency=low
 
   * New upstream release (Closes: #558708).
+  * Move debian packaging to git.
   * State copyright for source file src/schemas/srx20.xsd.
   * Remove debian/watch: unable to follow upstream naming scheme.
   * Do not use sun java: we are using jaxb from openjdk.
@@ -22,7 +23,7 @@ omegat (2.2.3~beta4+dfsg-1) unstable; urgency=low
     - Package::omegat
       + Move libaccess-bridge-java-jni to Suggests.
 
- -- Tiago Saboga <tiagosaboga@gmail.com>  Tue, 07 Jun 2011 12:03:11 -0300
+ -- Tiago Saboga <tiagosaboga@gmail.com>  Tue, 07 Jun 2011 16:47:57 -0300
 
 omegat (1.8.1.2+dfsg-1.1) unstable; urgency=low
 

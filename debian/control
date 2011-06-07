@@ -7,8 +7,8 @@ Build-Depends: debhelper (>= 7), openjdk-6-jdk, ant
 Build-Depends-Indep: docbook-to-man, imagemagick, libvldocking-java,
  libhtmlparser-java, libjna-java, libswing-layout-java, tofrodos
 Homepage: http://www.omegat.org
-Vcs-Svn: svn://svn.debian.org/svn/pkg-java/trunk/omegat
-Vcs-Browser: http://svn.debian.org/wsvn/pkg-java/trunk/omegat
+Vcs-Git: git://git.debian.org/pkg-java/omegat.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-java/omegat.git
 Standards-Version: 3.9.1
 
 Package: omegat
