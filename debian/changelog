@@ -2,23 +2,21 @@ omegat (2.2.3~beta4+dfsg-1) unstable; urgency=low
 
   * New upstream release (Closes: #558708).
   * Do not use sun java: we are using jaxb from openjdk.
+  * javahelp-filters: Remove sun proprietary dtds.
+  * Use openjdk swingworker.
+  * Fix deprecated global warning (thanks Satoru Kurashiki).
   * Regenerate files under src/gen.
   * debian/repack-source.sh: fix repackaged file name.
   * Bug fix: "startup script choose to use openjdk, ignoring
     alternatives.", thanks to Satoru KURASHIKI (Closes: #526239).
   * Bug fix: "debhelper but no ${misc:Depends}", thanks to lintian.
   * Change to quilt patching system.
-  * Switch to dpkg-source 3.0 (quilt) format
-
- -- Tiago Saboga <tiagosaboga@gmail.com>  Mon, 06 Jun 2011 22:58:05 -0300
-
-omegat (1.8.1.2+dfsg-2) UNRELEASED; urgency=low
-
+  * Switch to dpkg-source 3.0 (quilt) format.
   * Acknowledge NMU (thanks to Tony Mancill) (Closes: #602267).
   * debian/control: 
     - (Homepage): Point to main OmegaT page.
 
- -- Tiago Saboga <tiagosaboga@gmail.com>  Mon, 30 May 2011 11:13:09 -0300
+ -- Tiago Saboga <tiagosaboga@gmail.com>  Tue, 07 Jun 2011 11:06:58 -0300
 
 omegat (1.8.1.2+dfsg-1.1) unstable; urgency=low
 
