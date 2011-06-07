@@ -1,0 +1,65 @@
+--- a/src/org/omegat/gui/dialogs/ProxyLoginDialog.java
++++ b/src/org/omegat/gui/dialogs/ProxyLoginDialog.java
+@@ -40,6 +40,7 @@
+ 
+ import org.omegat.util.OStrings;
+ import org.omegat.util.Preferences;
++import org.apache.commons.codec.binary.Base64;
+ 
+ /**
+  * 
+@@ -74,10 +75,10 @@
+         String encodedUser = (Preferences.getPreference(Preferences.PROXY_USER_NAME));
+         String encodedPassword = (Preferences.getPreference(Preferences.PROXY_PASSWORD));
+ 
+-        sun.misc.BASE64Decoder dec = new sun.misc.BASE64Decoder();
++        Base64 dec = new Base64();
+         try {
+-            userText.setText(new String(dec.decodeBuffer(encodedUser)));
+-            passwordField.setText(new String(dec.decodeBuffer(encodedPassword)));
++            userText.setText(new String(dec.decodeBase64(encodedUser)));
++            passwordField.setText(new String(dec.decodeBase64(encodedPassword)));
+         } catch (IOException ex) {
+             Log.logErrorRB("LOG_DECODING_ERROR");
+             Log.log(ex);
+@@ -207,9 +208,9 @@
+ 
+     private void okButtonActionPerformed(java.awt.event.ActionEvent evt)// GEN-FIRST:event_okButtonActionPerformed
+     {
+-        sun.misc.BASE64Encoder enc = new sun.misc.BASE64Encoder();
+-        String encodeduser = enc.encode(userText.getText().getBytes());
+-        String encodedPassword = enc.encode(new String(passwordField.getPassword()).getBytes());
++        Base64 enc = new Base64();
++        String encodeduser = new String(enc.encodeBase64(userText.getText().getBytes()));
++        String encodedPassword = new String(enc.encodeBase64(new String(passwordField.getPassword()).getBytes()));
+ 
+         Preferences.setPreference(Preferences.PROXY_USER_NAME, encodeduser);
+         Preferences.setPreference(Preferences.PROXY_PASSWORD, encodedPassword);
+--- a/src/org/omegat/util/WikiGet.java
++++ b/src/org/omegat/util/WikiGet.java
+@@ -37,6 +37,7 @@
+ import java.net.URL;
+ import java.net.URLEncoder;
+ import java.util.Map;
++import org.apache.commons.codec.binary.Base64;
+ 
+ /**
+  * Import pages from MediaWiki
+@@ -218,12 +219,12 @@
+             String encodedUser = (Preferences.getPreference(Preferences.PROXY_USER_NAME));
+             if (!StringUtil.isEmpty(encodedUser)) { // There is a proxy user
+                 String encodedPassword = (Preferences.getPreference(Preferences.PROXY_PASSWORD));
+-                sun.misc.BASE64Decoder dec = new sun.misc.BASE64Decoder();
++                Base64 dec = new Base64();
+                 try {
+-                    String pass = (new String(dec.decodeBuffer(encodedUser)));
+-                    pass += ":" + new String(dec.decodeBuffer(encodedPassword));
+-                    sun.misc.BASE64Encoder enc = new sun.misc.BASE64Encoder();
+-                    encodedPassword = enc.encode(pass.getBytes());
++                    String pass = (new String(dec.decodeBase64(encodedUser)));
++                    pass += ":" + new String(dec.decodeBase64(encodedPassword));
++                    Base64 enc = new Base64();
++                    encodedPassword = new String(enc.encodeBase64(pass.getBytes()));
+                     conn.setRequestProperty("Proxy-Authorization", "Basic " + encodedPassword);
+                 } catch (IOException ex) {
+                     Log.logErrorRB("LOG_DECODING_ERROR");

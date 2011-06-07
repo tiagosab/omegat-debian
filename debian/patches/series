@@ -5,3 +5,4 @@
 08-use-java-swingworker.patch
 10-do-not-load-jmyspell.patch
 12-generate-files-with-xjc.patch
+13-replace-BASE64Encoder.patch
