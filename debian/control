@@ -14,8 +14,9 @@ Standards-Version: 3.9.1
 Package: omegat
 Architecture: all
 Depends: ${misc:Depends}, openjdk-6-jre, libvldocking-java,
- libhtmlparser-java, libswing-layout-java, libaccess-bridge-java-jni,
+ libhtmlparser-java, libswing-layout-java
 Recommends: libjna-java, libhunspell-1.2-0
+Suggests: libaccess-bridge-java-jni
 Description: Computer Assisted Translation (CAT) tool
  OmegaT's main features are
   - ability to run on any operating system supporting Java

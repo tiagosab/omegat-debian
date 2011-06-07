@@ -19,6 +19,8 @@ omegat (2.2.3~beta4+dfsg-1) unstable; urgency=low
   * Acknowledge NMU (thanks to Tony Mancill) (Closes: #602267).
   * debian/control: 
     - (Homepage): Point to main OmegaT page.
+    - Package::omegat
+      + Move libaccess-bridge-java-jni to Suggests.
 
  -- Tiago Saboga <tiagosaboga@gmail.com>  Tue, 07 Jun 2011 12:03:11 -0300
 
