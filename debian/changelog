@@ -4,7 +4,7 @@ omegat (2.2.3~beta4+dfsg-1) unstable; urgency=low
   * Move debian packaging to git.
   * State copyright for source file src/schemas/srx20.xsd.
   * Disable debian/watch: unable to follow upstream naming scheme.
-  * Do not use sun java: we are using jaxb from openjdk.
+  * Add openjdk-7-jre as runtime alternative.
   * javahelp-filters: Remove sun proprietary dtds.
   * Use openjdk swingworker.
   * Fix deprecated global warning (thanks Satoru Kurashiki).

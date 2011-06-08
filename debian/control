@@ -13,8 +13,9 @@ Standards-Version: 3.9.2
 
 Package: omegat
 Architecture: all
-Depends: ${misc:Depends}, openjdk-6-jre, libvldocking-java,
- libhtmlparser-java, libswing-layout-java
+Depends: ${misc:Depends}, openjdk-6-jre | openjdk-7-jre |
+ sun-java6-jre, libvldocking-java, libhtmlparser-java,
+ libswing-layout-java
 Recommends: libjna-java, libhunspell-1.2-0
 Suggests: libaccess-bridge-java-jni
 Description: Computer Assisted Translation (CAT) tool
