@@ -1,0 +1,19 @@
+OmegaT may be extended by plugins. None of them is currently available
+as debian packages, and here are some pointers.
+
+* omegat-plugins
+
+http://omegat-plugins.sourceforge.net/
+
+This project allows integration with Lucene stemmer, for the
+recognition of inflected forms, and LanguageTools, a style and grammar
+checker.
+
+* okapi-framework
+
+http://okapi.opentag.com/
+
+okapi-framework contains a plugin which extend the file formats
+supported by OmegaT.
+
+ -- Tiago Saboga <tiagosaboga@gmail.com>  Thu, 09 Jun 2011 10:49:02 -0300
