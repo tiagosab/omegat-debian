@@ -22,4 +22,4 @@ else
     exit 1
 fi
 
-exec $JAVABIN $JAVA_OPTIONS -jar /usr/share/java/OmegaT.jar $*
+exec $JAVABIN $JAVA_OPTIONS -jar /usr/share/omegat/OmegaT.jar $*
