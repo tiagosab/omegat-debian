@@ -4,7 +4,7 @@ JAVA_OPTIONS='-Djava.library.path=/usr/lib/jni'
 
 JAVA=$(which java | xargs readlink -f)
 
-echo "$JAVA" | grep -e '(openjdk|sun)'
+echo "$JAVA" | grep -q -e '\(openjdk\|sun\)'
 if [ $? -eq 0 ]
 then
     JAVABIN=$JAVA
