@@ -20,18 +20,26 @@ Recommends: libjna-java, libhunspell-1.2-0
 Suggests: libaccess-bridge-java-jni
 Description: Computer Assisted Translation (CAT) tool
  OmegaT's main features are
-  - ability to run on any operating system supporting Java
-  - use of any valid TMX file as translation reference
-  - flexible sentence segmenting (using an SRX-like method)
-  - searches in the project and the reference translation memories
-  - searches in any directory including OmegaT-readable files
-  - fuzzy matching
-  - smart handling of projects including complex directory hierarchies
-  - support for glossaries (terminology checks)
-  - easy to understand documentation and tutorial
-  - localization in a number of languages.
+  - multiple source texts handling, retaining complex folder
+    hierarchies
+  - fuzzy matching with other segments in the source file(s)
+    or TMX files from previous projects
+  - easy glossary terms management
+  - flexible regex-based sentence segmenting (using an
+    SRX-like method)
+  - powerful regex-based searches along with the facility to
+    apply a filter to display search results in the editor
+  - ability to batch process documents from the command line
+  - extended project statistics
+  - easy-to-understand documentation and tutorial
+  - plugin architecture with separate Lucene stemmer
+    (recognition of inflected forms) and LanguageTool (style
+     and grammar checker) plugins
+  - integration with Hunspell for spelling checking
+  - simple API to access source/target/selection textual data 
  .
- OmegaT supports OpenDocument files, Microsoft Office files (using
- OpenOffice.org as a conversion filter, or by conversion to HTML),
- OpenOffice.org or StarOffice files, as well as (X)HTML, Java
- localization files, PO files, OpenXML , DocBook or plain text files.
+ OmegaT supports 24 formats, including documentation formats such as
+ OpenDocument, Open XML (MS Office 2007), DocBook and (x)HTML, and
+ also localization formats such as Java properties and PO files. An
+ Okapi plugin can further extend the supported formats, for example to
+ include TTX (TradosTag).

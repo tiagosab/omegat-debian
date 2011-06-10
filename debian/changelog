@@ -25,9 +25,10 @@ omegat (2.2.3~beta4+dfsg-1) unstable; urgency=low
     - (Homepage): Point to main OmegaT page.
     - Package::omegat
       + Move libaccess-bridge-java-jni to Suggests.
+      + Update long description.
   * Bump debian policy (no changes needed).
 
- -- Tiago Saboga <tiagosaboga@gmail.com>  Fri, 10 Jun 2011 11:33:15 -0300
+ -- Tiago Saboga <tiagosaboga@gmail.com>  Fri, 10 Jun 2011 12:27:21 -0300
 
 omegat (1.8.1.2+dfsg-1.1) unstable; urgency=low
 
